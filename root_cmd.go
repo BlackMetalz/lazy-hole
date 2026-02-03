@@ -7,7 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "0.1.0"
+var (
+	version    = "0.1.0"
+	configPath string
+)
 
 var rootCmd = &cobra.Command{
 	Use:     "lazy-hole",
@@ -15,10 +18,24 @@ var rootCmd = &cobra.Command{
 	Long:    `lazy-hole - A CLI/TUI tool to simulate network failures for testing distributed systems.`,
 	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		// Load Config
+		config, err := LoadConfig(configPath)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 		// TODO: Start TUI here (future)
+		// fmt.Println("TUI mode coming soon...")
 		fmt.Println("lazy-hole v" + version)
-		fmt.Println("TUI mode coming soon...")
+		fmt.Printf("Loaded %d hosts from %s\n", len(config.Hosts), configPath)
+
 	},
+}
+
+// Add flag for config path
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "sample/hosts.yaml", "Path to config file")
 }
 
 func Execute() {
