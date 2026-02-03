@@ -1,0 +1,11 @@
+# Sample only, not ssh-able
+hosts:
+  - name: mysql-node-1      # Display name in TUI
+    ip: 10.0.0.999          # IP address to SSH to
+    ssh_user: kienlt        # SSH username
+    # ssh_port: 22            # Optional, default 22
+    ssh_key: ~/.ssh/id_rsa  # Optional, default use ssh-agent / ~/.ssh/id_rsa
+
+  - name: mysql-node-2
+    ip: 10.0.0.6
+    ssh_user: kienlt
