@@ -33,3 +33,4 @@ go.work.sum
 
 # For this project
 tmp/
+sample/live.yaml

@@ -30,6 +30,17 @@ var rootCmd = &cobra.Command{
 		fmt.Println("lazy-hole v" + version)
 		fmt.Printf("Loaded %d hosts from %s\n", len(config.Hosts), configPath)
 
+		// Test SSH Connection to each host.
+		for _, host := range config.Hosts {
+			client, err := connectSSH(host)
+			if err != nil {
+				fmt.Printf("Failed to connect to %s via port %d: %v\n", host.Name, host.SSH_Port, err)
+				continue
+			}
+			fmt.Printf("Successfully connected to %s\n", host.Name)
+			defer client.Close()
+		}
+
 	},
 }
 
