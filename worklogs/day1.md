@@ -89,4 +89,3 @@ ok. That's all for Story 1.1
 
 ==================
 
-### Story 1.2

@@ -1,9 +1,8 @@
 package main
 
-import "fmt"
-
 func main() {
-	fmt.Println("Hello, World!")
+
+	Execute()
 
 	// newHost := Host{
 	// 	Name:     "mysql-node-1",
@@ -15,10 +14,11 @@ func main() {
 
 	// fmt.Printf("%+v\n", newHost)
 
-	config, err := LoadConfig("sample/hosts.yaml")
-	if err != nil {
-		panic(err)
-	}
+	// config, err := LoadConfig("sample/hosts.yaml")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	fmt.Printf("%+v\n", config)
+	// fmt.Printf("%+v\n", config)
+
 }
