@@ -1,5 +1,7 @@
 package main
 
+import "golang.org/x/crypto/ssh"
+
 type Host struct {
 	Name     string `yaml:"name"`
 	IP       string `yaml:"ip"`
@@ -11,4 +13,12 @@ type Host struct {
 // wrapper struct for config file
 type Config struct {
 	Hosts []Host `yaml:"hosts"`
+}
+
+// Host Status store connection result for each host
+type HostStatus struct {
+	Host      Host
+	Connected bool
+	Error     error
+	Client    *ssh.Client
 }

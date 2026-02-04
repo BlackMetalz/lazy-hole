@@ -76,3 +76,43 @@ func connectSSH(host Host) (*ssh.Client, error) {
 	return client, nil
 
 }
+
+// Test all hosts connection in PARALLEL
+func testAllHosts(hosts []Host) []HostStatus {
+	// Yes, I understand this shit.
+	// Input is slice of Host, that loads all host from config
+	// Output is slide of Host Status, that contains connection result for each host
+
+	// create channel to collect results
+	// good shit, count total host to make buffered channel xD
+	results := make(chan HostStatus, len(hosts))
+
+	// spawn goroutine for each host
+	for _, host := range hosts {
+		go func(h Host) {
+			client, err := connectSSH(h)
+
+			status := HostStatus{
+				Host:      h,
+				Connected: err == nil,
+				Error:     err,
+				Client:    client,
+			}
+
+			// This shit is import
+			results <- status // send result into fucking channel
+		}(host) // Fucking second important.
+		// Pass host as argument to goroutine to avoid closure capture the last value of host?
+	}
+
+	// Collect all results
+	var statuses []HostStatus
+	for i := 0; i < len(hosts); i++ {
+		status := <-results // Receive from channel
+		statuses = append(statuses, status)
+		status.Client.Close() // Close connection after test done!
+	}
+
+	return statuses
+
+}

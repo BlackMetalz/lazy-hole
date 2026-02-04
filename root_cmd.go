@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time" // For calculate time
 
 	"github.com/spf13/cobra"
 )
@@ -30,16 +31,34 @@ var rootCmd = &cobra.Command{
 		fmt.Println("lazy-hole v" + version)
 		fmt.Printf("Loaded %d hosts from %s\n", len(config.Hosts), configPath)
 
-		// Test SSH Connection to each host.
-		for _, host := range config.Hosts {
-			client, err := connectSSH(host)
-			if err != nil {
-				fmt.Printf("Failed to connect to %s via port %d: %v\n", host.Name, host.SSH_Port, err)
-				continue
+		// Test SSH Connection to each host. (Sequential)
+		// for _, host := range config.Hosts {
+		// 	client, err := connectSSH(host)
+		// 	if err != nil {
+		// 		fmt.Printf("Failed to connect to %s via port %d: %v\n", host.Name, host.SSH_Port, err)
+		// 		continue
+		// 	}
+		// 	fmt.Printf("Successfully connected to %s\n", host.Name)
+		// 	defer client.Close()
+		// }
+
+		// Test SSH Connection to each host (Parallel)
+		fmt.Println("\nTesting SSH connections... >.>")
+		startTime := time.Now() // start counting time
+		statuses := testAllHosts(config.Hosts)
+
+		timeElapsed := time.Since(startTime) // end counting time
+
+		for _, status := range statuses {
+			// Check if connected is true
+			if status.Connected {
+				fmt.Printf("%s: Connected!\n", status.Host.Name)
+			} else {
+				fmt.Printf("%s: Failed. Issue %v\n", status.Host.Name, status.Error)
 			}
-			fmt.Printf("Successfully connected to %s\n", host.Name)
-			defer client.Close()
 		}
+
+		fmt.Printf("\n⏱️ Total time elapsed for testing all hosts: %s\n", timeElapsed)
 
 	},
 }
