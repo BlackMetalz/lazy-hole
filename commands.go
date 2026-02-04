@@ -22,7 +22,6 @@ func isValidIPOrCIDR(input string) bool {
 }
 
 // Add blackhole route
-
 func addBlackHole(client *ssh.Client, target string) error {
 	// Validate Input
 	if !isValidIPOrCIDR(target) {
@@ -42,6 +41,35 @@ func addBlackHole(client *ssh.Client, target string) error {
 	if result.ExitCode != 0 {
 		if strings.Contains(result.Stderr, "File exists") {
 			return fmt.Errorf("Route already exists: %s", target)
+		}
+
+		// return other error
+		return fmt.Errorf("Command failed: %s", result.Stderr)
+	}
+
+	return nil
+}
+
+// Remove blackhole route
+func removeBlackHole(client *ssh.Client, target string) error {
+	// Validate Input
+	if !isValidIPOrCIDR(target) {
+		return fmt.Errorf("Invalid IP or CIDR: %s", target)
+	}
+
+	// Command to remove blackhole route
+	cmd := fmt.Sprintf("sudo ip route del blackhole %s", target)
+
+	result, err := runCommand(client, cmd)
+	if err != nil {
+		return fmt.Errorf("Failed to remove blackhole route: %w", err)
+	}
+
+	// Check for route not exists
+	// RTNETLINK answers: No such process
+	if result.ExitCode != 0 {
+		if strings.Contains(result.Stderr, "No such process") {
+			return fmt.Errorf("Route not exists: %s", target)
 		}
 
 		// return other error

@@ -370,3 +370,9 @@ Blackhole error: Route already exists: 9.9.9.9
 
 ⏱️ Total time elapsed for testing all hosts: 507.752375ms
 ```
+
+### Story 3.2: Remove blackhole route
+
+"Anh đã mơ về, ngôi nhà và những đứa trẻ."
+
+I will choose option read-able, that mean i will create 2 separate function to manage add/remove blackhole
