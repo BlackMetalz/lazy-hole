@@ -21,4 +21,5 @@ type HostStatus struct {
 	Connected bool
 	Error     error
 	Client    *ssh.Client
+	Sudo      bool // sudo access check
 }

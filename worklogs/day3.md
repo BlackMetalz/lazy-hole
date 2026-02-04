@@ -203,3 +203,59 @@ Loop iteration 3: host = C → goroutine 3 gets h = C (copied!)
 ```
 
 TLDR: pass param: copy value at spawn moment --> each goroutine have correct data
+
+## Story 2.3, check sudo access (1 point)
+
+Nothing much to explain, check if user has sudo. If not, print error and exit.
+Goal: After ssh connect, check host has sudo access or not.
+
+Result:
+```bash
+go run . -c sample/live.yaml
+lazy-hole v0.1.0
+Loaded 10 hosts from sample/live.yaml
+
+Testing SSH connections... >.>
+mysql-node-8: Connected!
+  root: Sudo access OK!
+mysql-node-1: Connected!
+  ubuntu: Sudo access OK!
+mysql-node-3: Connected!
+  kienlt: Sudo access NOT OK!
+mysql-node-2: Connected!
+  kienlt: Sudo access NOT OK!
+mysql-node-9: Connected!
+  root: Sudo access OK!
+mysql-node-7: Connected!
+  root: Sudo access OK!
+mysql-node-4: Connected!
+  root: Sudo access OK!
+mysql-node-5: Connected!
+  root: Sudo access OK!
+mysql-node-10: Connected!
+  root: Sudo access OK!
+mysql-node-6: Connected!
+  root: Sudo access OK!
+
+⏱️ Total time elapsed for testing all hosts: 802.7655ms
+```
+
+And yeah, I almost forgot about `defer` in `func checkSudo`
+```go
+func checkSudo(client *ssh.Client) bool {
+	session, err := client.NewSession() // 1. Create Session
+	if err != nil {
+		return false
+	}
+
+	// Close session after check done
+	defer session.Close() // 2. Register defer (not run yet)
+
+	// sudo -n = non-interactive, fails if password required
+	err = session.Run("sudo -n true") // 3. Run command
+	return err == nil // true if sudo works! 
+    // func return. After that, defer run
+}
+```
+
+So defer is not run when function return, it run after function return to make sure we have closed session!

@@ -99,6 +99,11 @@ func testAllHosts(hosts []Host) []HostStatus {
 				Client:    client,
 			}
 
+			// Check sudo if connected
+			if status.Connected {
+				status.Sudo = checkSudo(client)
+			}
+
 			// This shit is import
 			results <- status // send result into fucking channel
 		}(host) // Fucking second important.
@@ -115,4 +120,19 @@ func testAllHosts(hosts []Host) []HostStatus {
 
 	return statuses
 
+}
+
+// Check sudo access
+func checkSudo(client *ssh.Client) bool {
+	session, err := client.NewSession()
+	if err != nil {
+		return false
+	}
+
+	// Close session after check done
+	defer session.Close()
+
+	// sudo -n = non-interactive, fails if password required
+	err = session.Run("sudo -n true")
+	return err == nil // true if sudo works!
 }

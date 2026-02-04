@@ -53,6 +53,11 @@ var rootCmd = &cobra.Command{
 			// Check if connected is true
 			if status.Connected {
 				fmt.Printf("%s: Connected!\n", status.Host.Name)
+				if status.Sudo {
+					fmt.Printf("  %s: Sudo access OK!\n", status.Host.User)
+				} else {
+					fmt.Printf("  %s: Sudo access NOT OK!\n", status.Host.User)
+				}
 			} else {
 				fmt.Printf("%s: Failed. Issue %v\n", status.Host.Name, status.Error)
 			}
