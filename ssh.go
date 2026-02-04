@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -115,7 +116,8 @@ func testAllHosts(hosts []Host) []HostStatus {
 	for i := 0; i < len(hosts); i++ {
 		status := <-results // Receive from channel
 		statuses = append(statuses, status)
-		status.Client.Close() // Close connection after test done!
+		// status.Client.Close() // Close connection after test done!
+		// Temp comment this out to avoid closing connection before using it
 	}
 
 	return statuses
@@ -135,4 +137,43 @@ func checkSudo(client *ssh.Client) bool {
 	// sudo -n = non-interactive, fails if password required
 	err = session.Run("sudo -n true")
 	return err == nil // true if sudo works!
+}
+
+// Run command on remote host
+func runCommand(client *ssh.Client, cmd string) (CommandResult, error) {
+	session, err := client.NewSession() // Init new session
+	if err != nil {
+		return CommandResult{}, fmt.Errorf("failed to create session: %w", err)
+	}
+	defer session.Close() // Close session after run done
+
+	// capture stdout and stderr
+	// Init 2 empty buffer in memory
+	var stdout, stderr bytes.Buffer
+
+	// Tell the fucking session that send output to my fucking buffer
+
+	// stdout of remote --> buffer stdout
+	session.Stdout = &stdout // Redirect stdout to buffer
+
+	// stderr of remote --> buffer stderr
+	session.Stderr = &stderr // Redirect stderr to buffer
+
+	// Run command
+	err = session.Run(cmd) // Output of remote command will be written to stdout and stderr buffer
+
+	// Get exit code from error
+	exitCode := 0 // Default exit code
+	if err != nil {
+		if exitErr, ok := err.(*ssh.ExitError); ok {
+			exitCode = exitErr.ExitStatus()
+			err = nil // run command, just non-zero exit code, not error
+		}
+	}
+
+	return CommandResult{
+		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
+		ExitCode: exitCode,
+	}, err
 }

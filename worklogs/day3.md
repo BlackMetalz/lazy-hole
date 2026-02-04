@@ -259,3 +259,78 @@ func checkSudo(client *ssh.Client) bool {
 ```
 
 So defer is not run when function return, it run after function return to make sure we have closed session!
+
+
+## Story 2.4: Run command on remote host (2 points)
+Goal: function to run any command in remote host, capture output and return it.
+
+New thing learn:
+- `bytes.Buffer` : capture output from remote host into memory
+- `session.Stdout/Stderr`: redirect output of command
+- Type assertion: `err.(*ssh.ExitError)` - check error type to get exit code
+
+Funny when i tried to use closed connection to run command xD
+```
+  mysql-node-1: Failed to run command: failed to create session: read tcp 1.1.3.4:12345->host-ip-here:22: use of closed network connection
+```
+
+Little explain for `bytes.buffer`
+```
+Remote Host                   Your Program (Go)
+    │                              │
+    │  SSH Session                 │
+    │◄────────────────────────────►│
+    │                              │
+    │  Run "hostname"              │
+    │─────────────────────────────►│
+    │                              │
+    │  Output: "mysql-node-1"      │
+    │◄─────────────────────────────│
+    │                              │
+    │           ┌─────────────┐    │
+    │           │ stdout      │    │  ← bytes.Buffer contain output
+    │           │ "mysql..."  │    │
+    │           └─────────────┘    │
+```
+
+So another for `err.(*ssh.ExitError)`.
+
+When `session.Run()` fail, it will return `error`
+```
+type error interface {
+	Error() string
+}
+```
+As you can see, there is no fucking exit code here!
+
+So we depend on SSH package solution. SSH package defined `*ssh.ExitError` - which contain exit code of remote command.
+```go
+type ExitError struct {
+    // ... fields
+}
+
+func (e *ExitError) ExitStatus() int  // ← Exit code!
+```
+
+type assertion - check and convert
+```go
+if exitErr, ok := err.(*ssh.ExitError); ok {
+    // ok = true: err REALLY is *ssh.ExitError
+    // exitErr = converted value, can call ExitStatus()
+    exitCode = exitErr.ExitStatus()
+}
+```
+
+example:
+```go
+err = session.Run("exit 42")  // Command exit with code 42
+
+// err with type is error, but REALLY is *ssh.ExitError
+if exitErr, ok := err.(*ssh.ExitError); ok {
+    fmt.Println(exitErr.ExitStatus())  // 42
+}
+```
+
+TL;DR: Type assertion: check this fucking error to see it is special or not, if not get info from it which is exit code.
+
+I understand those shit about 20%, but good to go LOL

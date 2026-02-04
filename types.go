@@ -23,3 +23,10 @@ type HostStatus struct {
 	Client    *ssh.Client
 	Sudo      bool // sudo access check
 }
+
+// CommandResult, stores output of remote command
+type CommandResult struct {
+	Stdout   string
+	Stderr   string
+	ExitCode int // Exit code of remote command
+}

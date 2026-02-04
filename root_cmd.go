@@ -55,6 +55,15 @@ var rootCmd = &cobra.Command{
 				fmt.Printf("%s: Connected!\n", status.Host.Name)
 				if status.Sudo {
 					fmt.Printf("  %s: Sudo access OK!\n", status.Host.User)
+					result, err := runCommand(status.Client, "hostnamectl")
+					if err != nil {
+						fmt.Printf("  %s: Failed to run command: %v\n", status.Host.Name, err)
+					} else {
+						fmt.Printf("  %s: %s\n", status.Host.Name, result.Stdout)
+					}
+
+					// Close connection here
+					status.Client.Close()
 				} else {
 					fmt.Printf("  %s: Sudo access NOT OK!\n", status.Host.User)
 				}
