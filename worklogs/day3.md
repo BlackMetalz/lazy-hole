@@ -376,3 +376,26 @@ Blackhole error: Route already exists: 9.9.9.9
 "Anh đã mơ về, ngôi nhà và những đứa trẻ."
 
 I will choose option read-able, that mean i will create 2 separate function to manage add/remove blackhole
+
+### Story 3.3: List network interfaces
+
+Goal: list all network interfaces of remote host, so user can pick when apply tc rules that can be achieve by command `ls /sys/class/net/`
+
+Example output:
+```bash
+root@kienlt-jump:~# ls /sys/class/net/
+eth0  lo
+```
+
+Example output when run:
+```bash
+kienlt@Luongs-MacBook-Pro lazy-hole % go run . -c sample/single.yaml
+lazy-hole v0.1.0
+Loaded 1 hosts from sample/single.yaml
+
+Testing SSH connections... >.>
+mysql-node-1: Connected!
+Interfaces: [eth0]
+
+⏱️ Total time elapsed for testing all hosts: 471.933375ms
+```

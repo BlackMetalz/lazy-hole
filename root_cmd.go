@@ -69,11 +69,21 @@ var rootCmd = &cobra.Command{
 					*/
 
 					// Test blackhole
-					err = addBlackHole(status.Client, "9.9.9.9")
+					/*
+						err = addBlackHole(status.Client, "9.9.9.9")
+						if err != nil {
+							fmt.Printf("Blackhole error: %v\n", err)
+						} else {
+							fmt.Printf("Blackhole added successfully for %s\n", status.Host.Name)
+						}
+					*/
+
+					// Test list interface
+					interfaces, err := listInterfaces(status.Client)
 					if err != nil {
-						fmt.Printf("Blackhole error: %v\n", err)
+						fmt.Printf("Error while list interfaces: %v\n", err)
 					} else {
-						fmt.Printf("Blackhole added successfully for %s\n", status.Host.Name)
+						fmt.Printf("Interfaces: %v\n", interfaces)
 					}
 
 					// Close connection here

@@ -78,3 +78,29 @@ func removeBlackHole(client *ssh.Client, target string) error {
 
 	return nil
 }
+
+// List network interfaces (exclude loopback "lo")
+func listInterfaces(client *ssh.Client) ([]string, error) {
+	// Command to list interfaces
+	result, err := runCommand(client, "ls /sys/class/net/")
+	if err != nil {
+		return nil, fmt.Errorf("Failed to list interfaces: %w", err)
+	}
+
+	if result.ExitCode != 0 {
+		return nil, fmt.Errorf("Command failed: %s", result.Stderr)
+	}
+
+	// parse output - split by whitespace
+	raw_interfaces := strings.Fields(result.Stdout)
+
+	// filter out "lo"
+	var interfaces []string
+	for _, iface := range raw_interfaces {
+		if iface != "lo" {
+			interfaces = append(interfaces, iface)
+		}
+	}
+
+	return interfaces, nil
+}
