@@ -79,11 +79,26 @@ var rootCmd = &cobra.Command{
 					*/
 
 					// Test list interface
-					interfaces, err := listInterfaces(status.Client)
-					if err != nil {
-						fmt.Printf("Error while list interfaces: %v\n", err)
-					} else {
-						fmt.Printf("Interfaces: %v\n", interfaces)
+					/*
+						interfaces, err := listInterfaces(status.Client)
+						if err != nil {
+							fmt.Printf("Error while list interfaces: %v\n", err)
+						} else {
+							fmt.Printf("Interfaces: %v\n", interfaces)
+						}
+					*/
+
+					// Test add latency
+					interfaces, _ := listInterfaces(status.Client)
+					if len(interfaces) > 0 {
+						// Example we have eth0 and lo interface only
+						// So eth0 interface will be used
+						err := addLatency(status.Client, interfaces[0], "100ms")
+						if err != nil {
+							fmt.Printf("latency increase error: %v\n", err)
+						} else {
+							fmt.Printf("Added 100ms latency to %s\n", interfaces[0])
+						}
 					}
 
 					// Close connection here

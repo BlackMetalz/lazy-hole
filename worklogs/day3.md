@@ -399,3 +399,43 @@ Interfaces: [eth0]
 
 ⏱️ Total time elapsed for testing all hosts: 471.933375ms
 ```
+
+### Story 3.4 Add latency to interface
+
+Cheatsheet:
+```bash
+# Add
+tc qdisc add dev eth0 root netem delay 100ms
+# List
+tc qdisc show dev eth0
+# Remove
+tc qdisc del dev eth0 root
+```
+
+Remember to handle duplication also, by changing from `add` to `change`
+```bash
+root@kienlt-jump:~# sudo tc qdisc add dev eth0 root netem delay 100ms
+root@kienlt-jump:~# sudo tc qdisc add dev eth0 root netem delay 100ms
+Error: Exclusivity flag on, cannot modify.
+root@kienlt-jump:~# sudo tc qdisc change dev eth0 root netem delay 100ms
+root@kienlt-jump:~# tc qdisc show dev eth0
+qdisc netem 8002: root refcnt 2 limit 1000 delay 101ms
+```
+
+Output
+
+```bash
+kienlt@Luongs-MacBook-Pro lazy-hole % go run . -c sample/single.yaml
+lazy-hole v0.1.0
+Loaded 1 hosts from sample/single.yaml
+
+Testing SSH connections... >.>
+mysql-node-1: Connected!
+Added 100ms latency to eth0
+
+⏱️ Total time elapsed for testing all hosts: 485.525917ms
+
+# In remote
+root@kienlt-jump:~# tc qdisc show dev eth0
+qdisc netem 8003: root refcnt 2 limit 1000 delay 100ms
+```

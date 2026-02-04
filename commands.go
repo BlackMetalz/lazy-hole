@@ -104,3 +104,40 @@ func listInterfaces(client *ssh.Client) ([]string, error) {
 
 	return interfaces, nil
 }
+
+// Add latency to interface with tc command
+func addLatency(client *ssh.Client, iface, delay string) error {
+	// Validate delay format (e.g., "100ms", "50ms")
+	if !strings.HasSuffix(delay, "ms") {
+		return fmt.Errorf("invalid delay format: %s (use e.g., '100ms')", delay)
+	}
+
+	// Create command
+	cmd := fmt.Sprintf("sudo tc qdisc add dev %s root netem delay %s", iface, delay)
+
+	result, err := runCommand(client, cmd)
+	if err != nil {
+		return fmt.Errorf("Failed to add latency: %w", err)
+	}
+
+	// handle Error: Exclusivity flag on, cannot modify.
+	if result.ExitCode != 0 {
+		if strings.Contains(result.Stderr, "Exclusivity flag on, cannot modify.") {
+			// try change instead of add
+			cmd = fmt.Sprintf("sudo tc qdisc change dev %s root netem delay %s", iface, delay)
+
+			result, err = runCommand(client, cmd)
+			if err != nil {
+				return fmt.Errorf("Failed to add latency: %w", err)
+			}
+
+			if result.ExitCode != 0 {
+				return fmt.Errorf("Change tc qdisc failed: %s", result.Stderr)
+			}
+		} else {
+			return fmt.Errorf("Command failed: %s", result.Stderr)
+		}
+	}
+
+	return nil
+}
