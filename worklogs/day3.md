@@ -334,3 +334,39 @@ if exitErr, ok := err.(*ssh.ExitError); ok {
 TL;DR: Type assertion: check this fucking error to see it is special or not, if not get info from it which is exit code.
 
 I understand those shit about 20%, but good to go LOL
+
+
+## Epic 3. Core command (MVP)
+
+## Story 3.1: Add blackhole route
+
+Goal: add blackhole route to remote host.
+
+Progress: everything is pretty basic, nothing advanced like Epic 2!
+Validate IR / CIDR, because `ip route add blackhole <ip>` will fail if not valid IP or CIDR.
+
+After validate, used function `runCommand(client, "command-here")` to run command on remote host.
+
+Handled blackroute exists by checking output of command, if contains `File exists` then return error. 
+
+Example:
+```bash
+kienlt@Luongs-MacBook-Pro lazy-hole % go run . -c sample/single.yaml
+lazy-hole v0.1.0
+Loaded 1 hosts from sample/single.yaml
+
+Testing SSH connections... >.>
+mysql-node-1: Connected!
+Blackhole added successfully for mysql-node-1
+
+⏱️ Total time elapsed for testing all hosts: 237.129375ms
+kienlt@Luongs-MacBook-Pro lazy-hole % go run . -c sample/single.yaml
+lazy-hole v0.1.0
+Loaded 1 hosts from sample/single.yaml
+
+Testing SSH connections... >.>
+mysql-node-1: Connected!
+Blackhole error: Route already exists: 9.9.9.9
+
+⏱️ Total time elapsed for testing all hosts: 507.752375ms
+```

@@ -54,18 +54,32 @@ var rootCmd = &cobra.Command{
 			if status.Connected {
 				fmt.Printf("%s: Connected!\n", status.Host.Name)
 				if status.Sudo {
-					fmt.Printf("  %s: Sudo access OK!\n", status.Host.User)
-					result, err := runCommand(status.Client, "hostnamectl")
+
+					// Test sudo access
+					// fmt.Printf("%s: Sudo access OK!\n", status.Host.User)
+
+					// Test hostnamectl command
+					/*
+						result, err := runCommand(status.Client, "hostnamectl")
+						if err != nil {
+							fmt.Printf("  %s: Failed to run command: %v\n", status.Host.Name, err)
+						} else {
+							fmt.Printf("  %s: %s\n", status.Host.Name, result.Stdout)
+						}
+					*/
+
+					// Test blackhole
+					err = addBlackHole(status.Client, "9.9.9.9")
 					if err != nil {
-						fmt.Printf("  %s: Failed to run command: %v\n", status.Host.Name, err)
+						fmt.Printf("Blackhole error: %v\n", err)
 					} else {
-						fmt.Printf("  %s: %s\n", status.Host.Name, result.Stdout)
+						fmt.Printf("Blackhole added successfully for %s\n", status.Host.Name)
 					}
 
 					// Close connection here
 					status.Client.Close()
 				} else {
-					fmt.Printf("  %s: Sudo access NOT OK!\n", status.Host.User)
+					fmt.Printf("%s: Sudo access NOT OK!\n", status.Host.User)
 				}
 			} else {
 				fmt.Printf("%s: Failed. Issue %v\n", status.Host.Name, status.Error)
