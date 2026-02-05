@@ -141,3 +141,22 @@ func addLatency(client *ssh.Client, iface, delay string) error {
 
 	return nil
 }
+
+func removeLatency(client *ssh.Client, iface string) error {
+	cmd := fmt.Sprintf("sudo tc qdisc del dev %s root", iface)
+
+	result, err := runCommand(client, cmd)
+	if err != nil {
+		return fmt.Errorf("Failed to remove latency: %w", err)
+	}
+
+	if result.ExitCode != 0 {
+		if strings.Contains(result.Stderr, "Cannot delete qdisc with handle of zero.") {
+			return fmt.Errorf("no tc rules on %s", iface)
+		}
+
+		return fmt.Errorf("command failed: %s", result.Stderr)
+	}
+
+	return nil
+}
