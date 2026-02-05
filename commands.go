@@ -142,7 +142,7 @@ func addLatency(client *ssh.Client, iface, delay string) error {
 	return nil
 }
 
-func removeLatency(client *ssh.Client, iface string) error {
+func removeTCRules(client *ssh.Client, iface string) error {
 	cmd := fmt.Sprintf("sudo tc qdisc del dev %s root", iface)
 
 	result, err := runCommand(client, cmd)
@@ -156,6 +156,34 @@ func removeLatency(client *ssh.Client, iface string) error {
 		}
 
 		return fmt.Errorf("command failed: %s", result.Stderr)
+	}
+
+	return nil
+}
+
+func addPacketLoss(client *ssh.Client, iface, percent string) error {
+	// validate percent (0-100)
+	if !strings.HasSuffix(percent, "%") {
+		return fmt.Errorf("invalid format: %s (use e.g., '10%')", percent)
+	}
+
+	cmd := fmt.Sprintf("sudo tc qdisc add dev %s root netem loss %s", iface, percent)
+
+	result, err := runCommand(client, cmd)
+	if err != nil {
+		return fmt.Errorf("failed to add packet loss: %w", err)
+	}
+
+	if result.ExitCode != 0 {
+		if strings.Contains(result.Stderr, "Exclusivity flag on, cannot modify") {
+			cmd = fmt.Sprintf("sudo tc qdisc change dev %s root netem loss %s", iface, percent)
+			result, err = runCommand(client, cmd)
+			if err != nil || result.ExitCode != 0 {
+				return fmt.Errorf("Change failed: %s", result.Stderr)
+			}
+		} else {
+			return fmt.Errorf("Command failed: %s", result.Stderr)
+		}
 	}
 
 	return nil
