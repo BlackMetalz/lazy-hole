@@ -22,7 +22,7 @@ func isValidIPOrCIDR(input string) bool {
 }
 
 // Add blackhole route
-func addBlackHole(client *ssh.Client, target string) error {
+func addBlackHole(client *ssh.Client, hostname, target string) error {
 	// Validate Input
 	if !isValidIPOrCIDR(target) {
 		return fmt.Errorf("Invalid IP or CIDR: %s", target)
@@ -45,13 +45,20 @@ func addBlackHole(client *ssh.Client, target string) error {
 
 		// return other error
 		return fmt.Errorf("Command failed: %s", result.Stderr)
+	} else {
+		// add track the effect bro!
+		effectTracker.Add(hostname, ActiveEffect{
+			Type:   EffectBlackHole,
+			Target: target,
+			Value:  "", // Blackhole doesn't require value.
+		})
 	}
 
 	return nil
 }
 
 // Remove blackhole route
-func removeBlackHole(client *ssh.Client, target string) error {
+func removeBlackHole(client *ssh.Client, hostname, target string) error {
 	// Validate Input
 	if !isValidIPOrCIDR(target) {
 		return fmt.Errorf("Invalid IP or CIDR: %s", target)
@@ -74,6 +81,13 @@ func removeBlackHole(client *ssh.Client, target string) error {
 
 		// return other error
 		return fmt.Errorf("Command failed: %s", result.Stderr)
+	} else {
+		// remove track the effect bro!
+		effectTracker.Remove(hostname, ActiveEffect{
+			Type:   EffectBlackHole,
+			Target: target,
+			Value:  "",
+		})
 	}
 
 	return nil
@@ -106,7 +120,7 @@ func listInterfaces(client *ssh.Client) ([]string, error) {
 }
 
 // Add latency to interface with tc command
-func addLatency(client *ssh.Client, iface, delay string) error {
+func addLatency(client *ssh.Client, hostname, iface, delay string) error {
 	// Validate delay format (e.g., "100ms", "50ms")
 	if !strings.HasSuffix(delay, "ms") {
 		return fmt.Errorf("invalid delay format: %s (use e.g., '100ms')", delay)
@@ -137,12 +151,20 @@ func addLatency(client *ssh.Client, iface, delay string) error {
 		} else {
 			return fmt.Errorf("Command failed: %s", result.Stderr)
 		}
+	} else {
+		// add track latency bro
+		effectTracker.Add(hostname, ActiveEffect{
+			Type:   EffectLatency,
+			Target: iface,
+			Value:  delay,
+		})
 	}
 
 	return nil
 }
 
-func removeTCRules(client *ssh.Client, iface string) error {
+// This can be understand as removeLatency from addLatency
+func removeTCRules(client *ssh.Client, hostname, iface string) error {
 	cmd := fmt.Sprintf("sudo tc qdisc del dev %s root", iface)
 
 	result, err := runCommand(client, cmd)
@@ -156,12 +178,18 @@ func removeTCRules(client *ssh.Client, iface string) error {
 		}
 
 		return fmt.Errorf("command failed: %s", result.Stderr)
+	} else {
+		effectTracker.Remove(hostname, ActiveEffect{
+			Type:   EffectLatency,
+			Target: iface,
+			Value:  "", // remember no need value i guess?
+		})
 	}
 
 	return nil
 }
 
-func addPacketLoss(client *ssh.Client, iface, percent string) error {
+func addPacketLoss(client *ssh.Client, hostname, iface, percent string) error {
 	// validate percent (0-100)
 	if !strings.HasSuffix(percent, "%") {
 		return fmt.Errorf("invalid format: %s (use e.g., '10%%')", percent)
@@ -184,13 +212,19 @@ func addPacketLoss(client *ssh.Client, iface, percent string) error {
 		} else {
 			return fmt.Errorf("Command failed: %s", result.Stderr)
 		}
+	} else {
+		effectTracker.Add(hostname, ActiveEffect{
+			Type:   EffectPacketLoss,
+			Target: iface,
+			Value:  percent,
+		})
 	}
 
 	return nil
 }
 
 // Block incomming traffic from source IP (network partition)
-func addPartition(client *ssh.Client, sourceIP string) error {
+func addPartition(client *ssh.Client, hostname, sourceIP string) error {
 	if net.ParseIP(sourceIP) == nil {
 		return fmt.Errorf("invalid IP: %s", sourceIP)
 	}
@@ -210,13 +244,19 @@ func addPartition(client *ssh.Client, sourceIP string) error {
 
 	if result.ExitCode != 0 {
 		return fmt.Errorf("Command failed: %s", result.Stderr)
+	} else {
+		effectTracker.Add(hostname, ActiveEffect{
+			Type:   EffectPartition,
+			Target: sourceIP,
+			Value:  "",
+		})
 	}
 
 	return nil
 }
 
 // Remove partition
-func removePartition(client *ssh.Client, sourceIP string) error {
+func removePartition(client *ssh.Client, hostname, sourceIP string) error {
 	if net.ParseIP(sourceIP) == nil {
 		return fmt.Errorf("invalid IP: %s", sourceIP)
 	}
@@ -233,6 +273,12 @@ func removePartition(client *ssh.Client, sourceIP string) error {
 			return fmt.Errorf("no partition rule to remove for %s", sourceIP)
 		}
 		return fmt.Errorf("command failed: %s", result.Stderr)
+	} else {
+		effectTracker.Remove(hostname, ActiveEffect{
+			Type:   EffectPartition,
+			Target: sourceIP,
+			Value:  "",
+		})
 	}
 
 	return nil
