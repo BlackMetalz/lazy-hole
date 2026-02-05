@@ -164,7 +164,7 @@ func removeTCRules(client *ssh.Client, iface string) error {
 func addPacketLoss(client *ssh.Client, iface, percent string) error {
 	// validate percent (0-100)
 	if !strings.HasSuffix(percent, "%") {
-		return fmt.Errorf("invalid format: %s (use e.g., '10%')", percent)
+		return fmt.Errorf("invalid format: %s (use e.g., '10%%')", percent)
 	}
 
 	cmd := fmt.Sprintf("sudo tc qdisc add dev %s root netem loss %s", iface, percent)
@@ -184,6 +184,55 @@ func addPacketLoss(client *ssh.Client, iface, percent string) error {
 		} else {
 			return fmt.Errorf("Command failed: %s", result.Stderr)
 		}
+	}
+
+	return nil
+}
+
+// Block incomming traffic from source IP (network partition)
+func addPartition(client *ssh.Client, sourceIP string) error {
+	if net.ParseIP(sourceIP) == nil {
+		return fmt.Errorf("invalid IP: %s", sourceIP)
+	}
+
+	// Check if rule exists first
+	checkCmd := fmt.Sprintf("sudo iptables -C INPUT -s %s -j DROP", sourceIP)
+	checkResult, err := runCommand(client, checkCmd)
+	if checkResult.ExitCode == 0 {
+		return fmt.Errorf("partition rule already exists for %s", sourceIP)
+	}
+
+	cmd := fmt.Sprintf("sudo iptables -A INPUT -s %s -j DROP", sourceIP)
+	result, err := runCommand(client, cmd)
+	if err != nil {
+		return fmt.Errorf("failed to add partition: %w", err)
+	}
+
+	if result.ExitCode != 0 {
+		return fmt.Errorf("Command failed: %s", result.Stderr)
+	}
+
+	return nil
+}
+
+// Remove partition
+func removePartition(client *ssh.Client, sourceIP string) error {
+	if net.ParseIP(sourceIP) == nil {
+		return fmt.Errorf("invalid IP: %s", sourceIP)
+	}
+
+	// -D instead of -A for delete rule!
+	cmd := fmt.Sprintf("sudo iptables -D INPUT -s %s -j DROP", sourceIP)
+	result, err := runCommand(client, cmd)
+	if err != nil {
+		return fmt.Errorf("failed to remove partition: %w", err)
+	}
+
+	if result.ExitCode != 0 {
+		if strings.Contains(result.Stderr, "Bad rule (does a matching rule exist in that chain?)") {
+			return fmt.Errorf("no partition rule to remove for %s", sourceIP)
+		}
+		return fmt.Errorf("command failed: %s", result.Stderr)
 	}
 
 	return nil
