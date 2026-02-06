@@ -283,3 +283,34 @@ func removePartition(client *ssh.Client, hostname, sourceIP string) error {
 
 	return nil
 }
+
+// Restore single host - remove all effects passed into that fucking host
+func restoreHost(client *ssh.Client, hostname string) error {
+
+	effects := effectTracker.Get(hostname)
+
+	if len(effects) == 0 {
+		return fmt.Errorf("No fucking effects to restore for %s", hostname)
+	}
+
+	for _, effect := range effects {
+		var err error
+		switch effect.Type {
+		case EffectBlackHole:
+			err = removeBlackHole(client, hostname, effect.Target)
+		case EffectLatency, EffectPacketLoss:
+			err = removeTCRules(client, hostname, effect.Target)
+		case EffectPartition:
+			err = removePartition(client, hostname, effect.Target)
+		}
+
+		if err != nil {
+			// Log error but still continue xD
+			fmt.Printf("Warning: failed to remove %s on %s: %v\n", effect.Type, hostname, err)
+		}
+	}
+
+	// Clear all tracked effects for this host in memory
+	effectTracker.Clear(hostname)
+	return nil
+}
