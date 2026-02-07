@@ -49,7 +49,6 @@ Flags:
   -c, --config string   Path to config file (default "sample/hosts.yaml")
   -h, --help            help for lazy-hole
   -v, --version         version for lazy-hole
-  ```
 ```
 
 And with default config:
