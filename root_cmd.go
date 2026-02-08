@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time" // For calculate time
 
 	"github.com/spf13/cobra"
@@ -46,6 +48,9 @@ var rootCmd = &cobra.Command{
 		fmt.Println("\nTesting SSH connections... >.>")
 		startTime := time.Now() // start counting time
 		statuses := testAllHosts(config.Hosts)
+
+		// Setup cleanup handler after we have connections
+		setupCleanUp(statuses)
 
 		timeElapsed := time.Since(startTime) // end counting time
 
@@ -93,7 +98,7 @@ var rootCmd = &cobra.Command{
 					if len(interfaces) > 0 {
 						// Example we have eth0 and lo interface only
 						// So eth0 interface will be used
-						err := addLatency(status.Client, interfaces[0], "100ms")
+						err := addLatency(status.Client, status.Host.Name, interfaces[0], "100ms")
 						if err != nil {
 							fmt.Printf("latency increase error: %v\n", err)
 						} else {
@@ -119,6 +124,34 @@ var rootCmd = &cobra.Command{
 // Add flag for config path
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "sample/hosts.yaml", "Path to config file")
+}
+
+// setupCleanUp will setup clean up function for root command
+func setupCleanUp(hostStatuses []HostStatus) {
+	// Create channel to receive signal
+	c := make(chan os.Signal, 1) // buffer size
+
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-c // Wait for Ctrl+C or kill signal
+		fmt.Println("\nReceived interrupt signal, cleaning up!")
+
+		// Check if there are any effects
+		if len(effectTracker.GetAll()) > 0 {
+			restoreAll(hostStatuses)
+		}
+
+		// Close all SSH connections
+		for _, status := range hostStatuses {
+			if status.Client != nil {
+				status.Client.Close()
+			}
+		}
+
+		fmt.Println("Bye!")
+		os.Exit(0)
+	}()
 }
 
 func Execute() {
