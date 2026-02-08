@@ -1,4 +1,4 @@
-# Day 6: Feb 6, 2026
+# Day 5: Feb 6, 2026
 
 ## Story 5.2: Single host restore
 

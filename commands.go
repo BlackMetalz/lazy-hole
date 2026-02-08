@@ -314,3 +314,41 @@ func restoreHost(client *ssh.Client, hostname string) error {
 	effectTracker.Clear(hostname)
 	return nil
 }
+
+// Restore all hosts - remove all effects from all hosts
+func restoreAll(hostStatuses []HostStatus) error {
+	// Get all affect from global tracker
+	allEffects := effectTracker.GetAll()
+
+	if len(allEffects) == 0 {
+		return fmt.Errorf("No effects to restore, bro!")
+	}
+
+	restored := 0
+	for hostname := range allEffects {
+		// find the client for this host
+		var client *ssh.Client
+		for _, status := range hostStatuses {
+			if status.Host.Name == hostname && status.Connected {
+				client = status.Client
+				break
+			}
+		}
+
+		if client == nil {
+			fmt.Printf("Warning: can not restore %s (not connected)\n", hostname)
+			continue
+		}
+
+		err := restoreHost(client, hostname)
+		if err != nil {
+			fmt.Printf("Warning: failed to restore %s: %v\n", hostname, err)
+		} else {
+			// increase counter
+			restored++
+		}
+	}
+
+	fmt.Printf("Restored %d hosts \n", restored)
+	return nil
+}
