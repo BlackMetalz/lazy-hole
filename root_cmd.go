@@ -118,6 +118,12 @@ var rootCmd = &cobra.Command{
 
 		fmt.Printf("\n⏱️ Total time elapsed for testing all hosts: %s\n", timeElapsed)
 
+		// Start TUI
+		tui := NewTUI(statuses)
+		if err := tui.Run(); err != nil {
+			fmt.Printf("TUI Error: %v\n", err)
+		}
+
 	},
 }
 
