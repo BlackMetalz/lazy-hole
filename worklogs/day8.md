@@ -174,3 +174,19 @@ If only 1 interface return from listInterfaces func, skip fucking dropdown!
 
 And SetAcceptanceFunc() doesn't allow it edit! Hmm, not really, it doesn't block Backspace/Delete, it is other specific fucking events
 
+## Story 5.3: View protected IPs
+Goal: press `p` in host list --> list all protected IPs to prevent self-lock!
+
+Display what?
+```
+┌─ Protected IPs ──────────────────────────┐
+│ mysql-node-1   SSH source: 192.168.1.100 │
+│ mysql-node-5   SSH source: 192.168.1.100 │
+│ mysql-node-6   SSH source: 10.0.0.1      │
+│                                          │
+│ Press ESC to close                       │
+└──────────────────────────────────────────┘
+```
+
+Result LGTM
+![alt text](../images/11.png)

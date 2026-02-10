@@ -86,6 +86,10 @@ func (t *TUI) Run() error {
 			}
 		}
 
+		// Story 5.3 - View protected IPs
+		if event.Rune() == 'p' {
+			t.showProtectedIPs()
+		}
 		return event
 	})
 
@@ -466,6 +470,12 @@ func (t *TUI) refreshHostList() {
 				t.app.Stop()
 			}
 		}
+
+		// Story 5.3 - View protected IPs
+		if event.Rune() == 'p' {
+			t.showProtectedIPs()
+		}
+
 		return event
 	})
 }
@@ -533,4 +543,40 @@ func (t *TUI) showConfirmDialog(msg string, onConfirm func()) {
 	})
 
 	t.app.SetRoot(modal, true)
+}
+
+// show protected ips
+func (t *TUI) showProtectedIPs() {
+	list := tview.NewList()
+	list.SetTitle(" Protected IPs ").SetBorder(true)
+
+	for i, status := range t.statuses {
+		if status.SSH_SourceIP != "" {
+			label := fmt.Sprintf("%-15s SSH source: %s", status.Host.Name, status.SSH_SourceIP)
+
+			var shortcut rune
+			if i < 9 {
+				shortcut = rune('1' + i)
+			} else {
+				shortcut = 0
+			}
+
+			list.AddItem(label, "", shortcut, nil)
+		}
+	}
+
+	// If not protected IP
+	// Count list
+	if list.GetItemCount() == 0 {
+		list.AddItem("No protected IPs detected??", "", 0, nil)
+	}
+
+	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			t.app.SetRoot(t.hostList, true)
+		}
+		return event
+	})
+
+	t.app.SetRoot(list, true)
 }
