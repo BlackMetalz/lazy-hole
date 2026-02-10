@@ -52,7 +52,10 @@ func (t *TUI) Run() error {
 		// 2: short description
 		// 3: shortkey: 1,2,3....
 		// 4: selectedFunc: func call when Enter - nil ==> nothing
-		t.hostList.AddItem(label, status.Host.IP, rune('1'+i), nil)
+		// 4: update selectedFunc
+		t.hostList.AddItem(label, status.Host.IP, rune('1'+i), func() {
+			t.showActionMenu(status) // Use s, not status
+		})
 	}
 
 	// Keyboard handler - capture keyboard events
@@ -99,4 +102,78 @@ func (t *TUI) formatHostLabel(status HostStatus) string {
 
 	// %-15s = format string, padding 15 chars, left align
 	return fmt.Sprintf("%-15s %s%s", status.Host.Name, statusIcon, effectCount)
+}
+
+// Show Action Menu, display menu actions for host selected
+// When user press enter in 1 host, this fucking menu will pop up
+func (t *TUI) showActionMenu(status HostStatus) {
+	// Create new list for menu
+	actionList := tview.NewList()
+	actionList.SetTitle(" Actions for " + status.Host.Name + " ").SetBorder(true)
+
+	// if host without sudo, display warning and return
+	// Without sudo we can not do anything!
+	if !status.Sudo {
+		// Modal equal to popup with msg
+		modal := tview.NewModal().SetText("This host has NO SUDO access!\nCan not do anything!").AddButtons([]string{"OK"}).SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			// When user click ok, return to host list
+			t.app.SetRoot(t.hostList, true)
+		})
+
+		t.app.SetRoot(modal, true)
+		return
+	}
+
+	// Add action options
+	actionList.AddItem("[B] Blackhole", "Drop traffic to IP/CIDR", 'b', func() {
+		t.showInputForm(status, "blackhole")
+	})
+
+	actionList.AddItem("[L] Latency", "Add network delay", 'l', func() {
+		t.showInputForm(status, "latency")
+	})
+
+	actionList.AddItem("[P] Packet Loss", "Drop random packets", 'p', func() {
+		t.showInputForm(status, "packetloss")
+	})
+	actionList.AddItem("[I] IPtables Partition", "Block source IP", 'i', func() {
+		t.showInputForm(status, "partition")
+	})
+
+	actionList.AddItem("[R] Restore All", "Remove all rules", 'r', func() {
+		// call restoreHost directly
+		err := restoreHost(status.Client, status.Host.Name)
+		if err != nil {
+			t.showMessage("Error: " + err.Error())
+		} else {
+			t.showMessage("Restored " + status.Host.Name)
+		}
+	})
+
+	actionList.AddItem("[ESC] back", "Return to host list", 0, nil)
+
+	// Keyboard handler for menu
+	actionList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			// Return to host list
+			t.app.SetRoot(t.hostList, true)
+		}
+		return event
+	})
+
+	// Display action menu instead of host list
+	t.app.SetRoot(actionList, true)
+}
+
+// Show message that display message in pop up
+func (t *TUI) showMessage(msg string) {
+	modal := tview.NewModal().SetText(msg).AddButtons([]string{"OK"}).SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		t.app.SetRoot(t.hostList, true)
+	})
+	t.app.SetRoot(modal, true)
+}
+
+// Show input form, place holder
+func (t *TUI) showInputForm(status HostStatus, actionType string) {
+	t.showMessage("Input form for " + actionType + " - Comming in story 4.4!")
 }
