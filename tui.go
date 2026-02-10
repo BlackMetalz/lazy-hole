@@ -174,6 +174,12 @@ func (t *TUI) showActionMenu(status HostStatus) {
 		t.showInputForm(status, "partition")
 	})
 
+	// Restore single effect
+	actionList.AddItem("Restore Single", "Remove one rule", 's', func() {
+		t.showRestoreMenu(status)
+	})
+
+	// Restore all rules
 	actionList.AddItem("Restore All", "Remove all rules", 'r', func() {
 		// call restoreHost directly
 		err := restoreHost(status.Client, status.Host.Name)
@@ -356,4 +362,55 @@ func (t *TUI) refreshHostList() {
 		}
 		return event
 	})
+}
+
+// showRestoreMenu, func support for single restore action for specific host.
+func (t *TUI) showRestoreMenu(status HostStatus) {
+	effects := effectTracker.Get(status.Host.Name)
+
+	// If no effects found
+	if len(effects) == 0 {
+		t.showMessage("No active effects on " + status.Host.Name)
+		return
+	}
+
+	restoreList := tview.NewList()
+	restoreList.SetTitle(" Restore - " + status.Host.Name + "").SetBorder(true)
+
+	// Add each effect into list
+	for i, e := range effects {
+		label := fmt.Sprintf("%s: %s %s", e.Type, e.Target, e.Value)
+
+		var shortcut rune
+		if i < 9 {
+			shortcut = rune('1' + i)
+		} else {
+			shortcut = 0
+		}
+
+		restoreList.AddItem(label, "", shortcut, func() {
+			err := removeSingleEffect(status.Client, status.Host.Name, e)
+			if err != nil {
+				t.showMessage("Error: " + err.Error())
+			} else {
+				t.showMessage("Removed: " + e.Type + " " + e.Target)
+			}
+		})
+	}
+
+	// Back Button
+	restoreList.AddItem("Back", "", 0, func() {
+		t.showActionMenu(status)
+	})
+
+	// Capture ESC to go back
+	restoreList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			t.showActionMenu(status)
+		}
+		return event
+	})
+
+	// Set root.
+	t.app.SetRoot(restoreList, true)
 }

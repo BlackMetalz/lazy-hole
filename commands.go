@@ -352,3 +352,28 @@ func restoreAll(hostStatuses []HostStatus) error {
 	fmt.Printf("Restored %d hosts \n", restored)
 	return nil
 }
+
+// removeSingleEffect - remove 1 specified effect
+func removeSingleEffect(client *ssh.Client, hostname string, effect ActiveEffect) error {
+	var cmd string
+
+	switch effect.Type {
+	case EffectBlackHole:
+		cmd = fmt.Sprintf("sudo ip route del blackhole %s", effect.Target)
+	case EffectLatency:
+		cmd = fmt.Sprintf("sudo tc qdisc del dev %s root", effect.Target)
+	case EffectPacketLoss:
+		cmd = fmt.Sprintf("sudo tc qdisc del dev %s root", effect.Target)
+	case EffectPartition:
+		cmd = fmt.Sprintf("sudo iptables -D INPUT -s %s -j DROP", effect.Target)
+	}
+
+	_, err := runCommand(client, cmd)
+	if err != nil {
+		return err
+	}
+
+	// Remove from global tracker as well
+	effectTracker.Remove(hostname, effect)
+	return nil
+}

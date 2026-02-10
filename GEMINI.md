@@ -12,3 +12,4 @@ Rules:
 - Don't generate code unless I explicitly ask for examples.
 - ONLY auto-generate: Documents + Unit Tests (explicit request only)
 - NO tool usage - pure reasoning + conversation context.
+- Closure Bug already fixed in Go 1.22+, never remind me about that!

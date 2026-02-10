@@ -119,7 +119,7 @@ i=9 → '1'+9 = ASCII 58 = ':' → (:) 💀
 
 Temp solution, remove short cut if number of host > 9
 
-## Story 4.3: Continue after bug fixes. Display active rules per host
+## Story 4.5: Continue after bug fixes. Display active rules per host
 Goal: display detail rules per host
 Example: 
 ```
@@ -131,3 +131,18 @@ Output
 ![alt text](../images/10.png)
 
 AGAIN. NEVER USE `[]` in `tview`!
+
+## Story 4.6: Restore single effect
+Goal: Restore single effect instead of all. List all rule then let user pick which to remove!
+
+Example:
+```
+┌─ Restore - mysql-node-1 ─────────┐
+│ (1) BlackHole: 1.1.1.1           │
+│ (2) BlackHole: 2.2.2.2           │
+│ (3) Latency: 100ms eth0          │
+│     Back                         │
+└──────────────────────────────────┘
+```
+
+Nothing much to explain, build menu with those effects. Remove when selected! Added function helper `removeSingleEffect` to do it.
