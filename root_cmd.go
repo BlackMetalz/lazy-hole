@@ -30,6 +30,8 @@ var rootCmd = &cobra.Command{
 		}
 		// TODO: Start TUI here (future)
 		// fmt.Println("TUI mode coming soon...")
+		// Already done in begin of EPIC 4 xD
+
 		fmt.Println("lazy-hole v" + version)
 		fmt.Printf("Loaded %d hosts from %s\n", len(config.Hosts), configPath)
 
@@ -94,20 +96,22 @@ var rootCmd = &cobra.Command{
 					*/
 
 					// Test add latency
-					interfaces, _ := listInterfaces(status.Client)
-					if len(interfaces) > 0 {
-						// Example we have eth0 and lo interface only
-						// So eth0 interface will be used
-						err := addLatency(status.Client, status.Host.Name, interfaces[0], "100ms")
-						if err != nil {
-							fmt.Printf("latency increase error: %v\n", err)
-						} else {
-							fmt.Printf("Added 100ms latency to %s\n", interfaces[0])
+					/*
+						interfaces, _ := listInterfaces(status.Client)
+						if len(interfaces) > 0 {
+							// Example we have eth0 and lo interface only
+							// So eth0 interface will be used
+							err := addLatency(status.Client, status.Host.Name, interfaces[0], "100ms")
+							if err != nil {
+								fmt.Printf("latency increase error: %v\n", err)
+							} else {
+								fmt.Printf("Added 100ms latency to %s\n", interfaces[0])
+							}
 						}
-					}
+					*/
 
 					// Close connection here
-					status.Client.Close()
+					// status.Client.Close() // Temp comment for Story 4.4
 				} else {
 					fmt.Printf("%s: Sudo access NOT OK!\n", status.Host.User)
 				}
@@ -118,10 +122,26 @@ var rootCmd = &cobra.Command{
 
 		fmt.Printf("\n⏱️ Total time elapsed for testing all hosts: %s\n", timeElapsed)
 
-		// Start TUI
+		// Start TUI when run
 		tui := NewTUI(statuses)
 		if err := tui.Run(); err != nil {
 			fmt.Printf("TUI Error: %v\n", err)
+		}
+
+		// fmt.Println("DEBUG: TUI exited!")
+		// fmt.Printf("DEBUG: effects count = %d\n", len(effectTracker.GetAll()))
+
+		// Cleanup after TUI exit (ESC/q)
+		if len(effectTracker.GetAll()) > 0 {
+			fmt.Println("\nCleaning up effects...")
+			restoreAll(statuses)
+		}
+
+		// Close all SSH connections after exit!
+		for _, status := range statuses {
+			if status.Client != nil {
+				status.Client.Close()
+			}
 		}
 
 	},

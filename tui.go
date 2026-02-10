@@ -174,6 +174,86 @@ func (t *TUI) showMessage(msg string) {
 }
 
 // Show input form, place holder
+// Display form that take params by action type
 func (t *TUI) showInputForm(status HostStatus, actionType string) {
-	t.showMessage("Input form for " + actionType + " - Comming in story 4.4!")
+	// t.showMessage("Input form for " + actionType + " - Comming in story 4.4!")
+
+	// tview.Newform => form has input field, like <form> in HTML
+	form := tview.NewForm()
+	form.SetBorder(true)
+
+	switch actionType {
+	case "blackhole":
+		form.SetTitle(" Blackhole - " + status.Host.Name + " ")
+		// AddInputField(label, value, width, validateFunc, doneFunc)
+		form.AddInputField("Target IP/CIDR", "", 30, nil, nil)
+		form.AddButton("Apply", func() {
+			// GetFormItem(0) = Get the first field
+			// .(*tview.InputField) = type assertion?
+			target := form.GetFormItem(0).(*tview.InputField).GetText()
+			err := addBlackHole(status.Client, status.Host.Name, target)
+			if err != nil {
+				t.showMessage("Error: " + err.Error())
+			} else {
+				t.showMessage("Blackhole added: " + target)
+			}
+		})
+	case "latency":
+		form.SetTitle(" Latency - " + status.Host.Name + " ")
+		form.AddInputField("Interface:", "eth0", 20, nil, nil)
+		form.AddInputField("Delay (e.g. 100ms): ", "", 20, nil, nil)
+		form.AddButton("Apply", func() {
+			iface := form.GetFormItem(0).(*tview.InputField).GetText()
+			delay := form.GetFormItem(1).(*tview.InputField).GetText()
+			err := addLatency(status.Client, status.Host.Name, iface, delay)
+			if err != nil {
+				t.showMessage("Error: " + err.Error())
+			} else {
+				t.showMessage("Latency added: " + delay)
+			}
+		})
+	case "packetloss":
+		form.SetTitle(" Packet Loss - " + status.Host.Name + " ")
+		form.AddInputField("Interface:", "eth0", 20, nil, nil)
+		form.AddInputField("Loss % (e.g. 10%): ", "", 20, nil, nil)
+		form.AddButton("Apply", func() {
+			iface := form.GetFormItem(0).(*tview.InputField).GetText()
+			percent := form.GetFormItem(1).(*tview.InputField).GetText()
+			err := addPacketLoss(status.Client, status.Host.Name, iface, percent)
+			if err != nil {
+				t.showMessage("Error: " + err.Error())
+			} else {
+				t.showMessage("Packet Loss added: " + percent)
+			}
+		})
+
+	case "partition":
+		form.SetTitle(" Partition - " + status.Host.Name + " ")
+		form.AddInputField("Source IP to block:", "", 30, nil, nil)
+		form.AddButton("Apply", func() {
+			sourceIP := form.GetFormItem(0).(*tview.InputField).GetText()
+			err := addPartition(status.Client, status.Host.Name, sourceIP)
+			if err != nil {
+				t.showMessage("Error: " + err.Error())
+			} else {
+				t.showMessage("Partition added: " + sourceIP)
+			}
+		})
+	}
+
+	// Add Cancel button - return back to action menu
+	form.AddButton("Cancel", func() {
+		t.showActionMenu(status)
+	})
+
+	// ESC press - return back to action menu
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			t.showActionMenu(status)
+		}
+		return event
+	})
+
+	t.app.SetRoot(form, true)
+
 }
