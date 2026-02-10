@@ -109,13 +109,32 @@ func (t *TUI) formatHostLabel(status HostStatus) string {
 	// // %-15s = format string, padding 15 chars, left align
 	// return fmt.Sprintf("%-15s %s%s", status.Host.Name, statusIcon, effectCount)
 
+	// Get effects for this host
 	effects := effectTracker.Get(status.Host.Name)
+
+	/* stop count in story 4.5
 	effectCount := ""
 	if len(effects) > 0 {
 		effectCount = fmt.Sprintf("(%d rules)", len(effects))
 	}
+	*/
 
-	return fmt.Sprintf("%-15s %s %s", status.Host.Name, statusIcon, effectCount)
+	// Story 4.5, display detail each effect:
+	effectStr := "" // Init
+	for _, e := range effects {
+		switch e.Type {
+		case EffectBlackHole:
+			effectStr += fmt.Sprintf(" (BlackHole:%s)", e.Target)
+		case EffectLatency:
+			effectStr += fmt.Sprintf(" (Latency:%s %s)", e.Value, e.Target)
+		case EffectPacketLoss:
+			effectStr += fmt.Sprintf(" (PacketLoss:%s%% %s)", e.Value, e.Target)
+		case EffectPartition:
+			effectStr += fmt.Sprintf(" (Partition:%s)", e.Target)
+		}
+	}
+
+	return fmt.Sprintf("%-15s %s%s", status.Host.Name, statusIcon, effectStr)
 
 }
 

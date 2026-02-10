@@ -120,3 +120,14 @@ i=9 → '1'+9 = ASCII 58 = ':' → (:) 💀
 Temp solution, remove short cut if number of host > 9
 
 ## Story 4.3: Continue after bug fixes. Display active rules per host
+Goal: display detail rules per host
+Example: 
+```
+mysql-node-1    HEALTHY  (BlackHole:1.1.1.1) (BlackHole:2.2.2.2)
+mysql-node-5    HEALTHY  (LATENCY:100ms eth0)
+```
+
+Output
+![alt text](../images/10.png)
+
+AGAIN. NEVER USE `[]` in `tview`!
