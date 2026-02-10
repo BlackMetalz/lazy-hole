@@ -53,7 +53,13 @@ func (t *TUI) Run() error {
 		// 3: shortkey: 1,2,3....
 		// 4: selectedFunc: func call when Enter - nil ==> nothing
 		// 4: update selectedFunc
-		t.hostList.AddItem(label, status.Host.IP, rune('1'+i), func() {
+		var shortKey rune
+		if i < 9 {
+			shortKey = rune('1' + i)
+		} else {
+			shortKey = 0 // No shortkey for more than 9 hosts
+		}
+		t.hostList.AddItem(label, status.Host.IP, shortKey, func() {
 			t.showActionMenu(status) // Use s, not status
 		})
 	}
@@ -84,24 +90,33 @@ func (t *TUI) formatHostLabel(status HostStatus) string {
 	// [white] reset color into default
 
 	if !status.Connected {
-		// No connection
-		statusIcon = "[red] FAILED[white]"
+		statusIcon = "[red]FAILED[-]"
 	} else if !status.Sudo {
-		// No Sudo
-		statusIcon = "[yellow] NO SUDO[white]"
+		statusIcon = "[yellow]NO SUDO[-]"
 	} else {
-		statusIcon = "[green] HEALTHY[white]"
+		statusIcon = "[green]HEALTHY[-]"
 	}
 
-	// count effect active on this running host
+	// // count effect active on this running host
+	// effects := effectTracker.Get(status.Host.Name)
+	// fmt.Println("Effect count: ", len(effects))
+
+	// effectCount := ""
+	// if len(effects) > 0 {
+	// 	effectCount = fmt.Sprintf("(%d rules)", len(effects))
+	// }
+
+	// // %-15s = format string, padding 15 chars, left align
+	// return fmt.Sprintf("%-15s %s%s", status.Host.Name, statusIcon, effectCount)
+
 	effects := effectTracker.Get(status.Host.Name)
 	effectCount := ""
 	if len(effects) > 0 {
-		effectCount = fmt.Sprintf("[%d rule]", len(effects))
+		effectCount = fmt.Sprintf("(%d rules)", len(effects))
 	}
 
-	// %-15s = format string, padding 15 chars, left align
-	return fmt.Sprintf("%-15s %s%s", status.Host.Name, statusIcon, effectCount)
+	return fmt.Sprintf("%-15s %s %s", status.Host.Name, statusIcon, effectCount)
+
 }
 
 // Show Action Menu, display menu actions for host selected
@@ -125,22 +140,22 @@ func (t *TUI) showActionMenu(status HostStatus) {
 	}
 
 	// Add action options
-	actionList.AddItem("[B] Blackhole", "Drop traffic to IP/CIDR", 'b', func() {
+	actionList.AddItem("Blackhole", "Drop traffic to IP/CIDR", 'b', func() {
 		t.showInputForm(status, "blackhole")
 	})
 
-	actionList.AddItem("[L] Latency", "Add network delay", 'l', func() {
+	actionList.AddItem("Latency", "Add network delay", 'l', func() {
 		t.showInputForm(status, "latency")
 	})
 
-	actionList.AddItem("[P] Packet Loss", "Drop random packets", 'p', func() {
+	actionList.AddItem("Packet Loss", "Drop random packets", 'p', func() {
 		t.showInputForm(status, "packetloss")
 	})
-	actionList.AddItem("[I] IPtables Partition", "Block source IP", 'i', func() {
+	actionList.AddItem("IPtables Partition", "Block source IP", 'i', func() {
 		t.showInputForm(status, "partition")
 	})
 
-	actionList.AddItem("[R] Restore All", "Remove all rules", 'r', func() {
+	actionList.AddItem("Restore All", "Remove all rules", 'r', func() {
 		// call restoreHost directly
 		err := restoreHost(status.Client, status.Host.Name)
 		if err != nil {
@@ -150,11 +165,16 @@ func (t *TUI) showActionMenu(status HostStatus) {
 		}
 	})
 
-	actionList.AddItem("[ESC] back", "Return to host list", 0, nil)
+	actionList.AddItem("Back", "Return to host list", 0, func() {
+		t.refreshHostList() // refresh data first
+		t.app.SetRoot(t.hostList, true)
+	})
 
 	// Keyboard handler for menu
 	actionList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
+			// REFRESH THE FUCKING DATA!
+			t.refreshHostList()
 			// Return to host list
 			t.app.SetRoot(t.hostList, true)
 		}
@@ -168,8 +188,12 @@ func (t *TUI) showActionMenu(status HostStatus) {
 // Show message that display message in pop up
 func (t *TUI) showMessage(msg string) {
 	modal := tview.NewModal().SetText(msg).AddButtons([]string{"OK"}).SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		// STILL NEED TO REFRESH FIRST, EVERY FUCKING TIME!!!
+		// When click OK, refresh, damn it!
+		t.refreshHostList()
 		t.app.SetRoot(t.hostList, true)
 	})
+
 	t.app.SetRoot(modal, true)
 }
 
@@ -249,6 +273,7 @@ func (t *TUI) showInputForm(status HostStatus, actionType string) {
 	// ESC press - return back to action menu
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
+			t.refreshHostList() // REFRESH, DAMN IT!
 			t.showActionMenu(status)
 		}
 		return event
@@ -256,4 +281,60 @@ func (t *TUI) showInputForm(status HostStatus, actionType string) {
 
 	t.app.SetRoot(form, true)
 
+}
+
+// refreshHostList, update all host list
+// Need to call this func everytime when we back to host list to have latest data
+// Fix issue rules added but host show nothing
+func (t *TUI) refreshHostList() {
+	/*
+		t.hostList.Clear() // remove old list
+
+		// DEBUG: show effect count in title
+		allEffects := effectTracker.GetAll()
+		t.hostList.SetTitle(fmt.Sprintf(" Hosts (tracked: %d hosts) ", len(allEffects)))
+
+		// build new list with latest data from tracker!
+		for i, status := range t.statuses {
+			label := t.formatHostLabel(status)
+
+			t.hostList.AddItem(label, status.Host.IP, rune('1'+i), func() {
+				t.showActionMenu(status)
+			})
+		}
+	*/
+
+	// Display again with host list
+	// t.app.SetRoot(t.hostList, true)
+	// Caller will handle this, prevent fucking conflict!
+	/*
+		So this is complete fucked, we need to create fucking complete new list
+	*/
+	t.hostList = tview.NewList()
+	t.hostList.SetTitle(" Hosts ").SetBorder(true)
+
+	allEffects := effectTracker.GetAll()
+	t.hostList.SetTitle(fmt.Sprintf(" Hosts (tracked: %d) ", len(allEffects)))
+
+	// Add hosts to list
+	for i, status := range t.statuses {
+		label := t.formatHostLabel(status)
+		var shortKey rune
+		if i < 9 {
+			shortKey = rune('1' + i)
+		} else {
+			shortKey = 0 // No shortkey for more than 9 hosts
+		}
+		t.hostList.AddItem(label, status.Host.IP, shortKey, func() {
+			t.showActionMenu(status)
+		})
+	}
+
+	// Re-add keyboard handler because new list!
+	t.hostList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape || event.Rune() == 'q' {
+			t.app.Stop()
+		}
+		return event
+	})
 }

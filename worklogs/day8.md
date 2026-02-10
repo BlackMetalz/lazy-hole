@@ -88,3 +88,35 @@ root@kienlt-jump:~#
 
 Exit and clean all effect Rule works well. They are tracked in memory.
 
+
+## Bug
+
+Fucking issue. Don't ever used `[...]` in text field of AddItem in tview!
+
+New issue: After add rule, no rule displayed in list!
+
+Ok, never use `fmt.Printf`, it will break TUI!
+
+Holy fucking shiet, now shit load of bug appear. Forgot about story 4.3, fix the fucking bug first!
+
+### Bug 1: Hidden text
+Root cause: `[white]` this fucking color tag ate the fucking text
+Fix: use fucking `[-]` instead of `[white]`
+
+### Bug 2: ESC key create fucking trash
+Root cause: func `Clear()` in tracker.go doesn't clean well
+Fix: Just create fucking new `tview.NewList()`
+
+### Bug 3: `fmt.Printf` break TUI
+Fix: Just don't use fucking fmt in tview!
+
+### Bug 4: Holy fucking shiet about rune (ASCII math!!!)
+i=0 → '1'+0 = '1' (ASCII 49) → (1)
+i=1 → '1'+1 = '2' (ASCII 50) → (2)
+i=2 → '1'+2 = '3' (ASCII 51) → (3)
+...
+i=9 → '1'+9 = ASCII 58 = ':' → (:) 💀
+
+Temp solution, remove short cut if number of host > 9
+
+## Story 4.3: Continue after bug fixes. Display active rules per host
