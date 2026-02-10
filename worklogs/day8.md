@@ -161,3 +161,8 @@ Check: target == SourceIP?
     ├── NO → apply
     └── YES → WARNING modal → confirm then apply
 ```
+
+## Story 4.6 - Quit with warning!
+Goal: when user press `q/ESC`, if rules active, ask quit anyway?
+
+Added both in run and refresh host list func!!

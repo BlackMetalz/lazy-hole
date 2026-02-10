@@ -68,7 +68,22 @@ func (t *TUI) Run() error {
 	t.hostList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// If user click escape or 'q' ==> exit app
 		if event.Key() == tcell.KeyEscape || event.Rune() == 'q' {
-			t.app.Stop()
+			// Check active effects before fucking quit!
+			allEffects := effectTracker.GetAll()
+			if len(allEffects) > 0 {
+				// Count total
+				total := 0
+				for _, effects := range allEffects {
+					total += len(effects)
+				}
+
+				msg := fmt.Sprintf("%d rules still active on %d hosts.\nQuit anyway?", total, len(allEffects))
+				t.showConfirmDialog(msg, func() {
+					t.app.Stop() // If user Yes -> quit
+				})
+			} else {
+				t.app.Stop() // No rule, just quit!
+			}
 		}
 
 		return event
@@ -388,7 +403,20 @@ func (t *TUI) refreshHostList() {
 	// Re-add keyboard handler because new list!
 	t.hostList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape || event.Rune() == 'q' {
-			t.app.Stop()
+			// CÙNG LOGIC như Run()!
+			allEffects := effectTracker.GetAll()
+			if len(allEffects) > 0 {
+				total := 0
+				for _, effects := range allEffects {
+					total += len(effects)
+				}
+				msg := fmt.Sprintf("%d rules still active on %d hosts.\nQuit anyway?", total, len(allEffects))
+				t.showConfirmDialog(msg, func() {
+					t.app.Stop()
+				})
+			} else {
+				t.app.Stop()
+			}
 		}
 		return event
 	})
