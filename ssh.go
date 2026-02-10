@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -100,9 +101,13 @@ func testAllHosts(hosts []Host) []HostStatus {
 				Client:    client,
 			}
 
-			// Check sudo if connected
 			if status.Connected {
+				// Check sudo if connected
 				status.Sudo = checkSudo(client)
+
+				// Prevent self-block
+				sourceIP, _ := detectSSHSourceIP(status.Client)
+				status.SSH_SourceIP = sourceIP
 			}
 
 			// This shit is import
@@ -176,4 +181,14 @@ func runCommand(client *ssh.Client, cmd string) (CommandResult, error) {
 		Stderr:   stderr.String(),
 		ExitCode: exitCode,
 	}, err
+}
+
+func detectSSHSourceIP(client *ssh.Client) (string, error) {
+	// Get self ip!
+	result, err := runCommand(client, "echo $SSH_CLIENT | awk '{print $1}'")
+
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(result.Stdout), nil
 }

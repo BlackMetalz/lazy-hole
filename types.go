@@ -17,11 +17,12 @@ type Config struct {
 
 // Host Status store connection result for each host
 type HostStatus struct {
-	Host      Host
-	Connected bool
-	Error     error
-	Client    *ssh.Client
-	Sudo      bool // sudo access check
+	Host         Host
+	Connected    bool
+	Error        error
+	Client       *ssh.Client
+	Sudo         bool   // sudo access check
+	SSH_SourceIP string // SSH source IP
 }
 
 // CommandResult, stores output of remote command

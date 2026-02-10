@@ -240,6 +240,21 @@ func (t *TUI) showInputForm(status HostStatus, actionType string) {
 			// GetFormItem(0) = Get the first field
 			// .(*tview.InputField) = type assertion?
 			target := form.GetFormItem(0).(*tview.InputField).GetText()
+
+			// Story 5.1, prevent self-lock
+			if status.SSH_SourceIP == target {
+				t.showConfirmDialog("WARNING: You are trying to block your own IP!\nAre you sure?", func() {
+					// if User don't care. Allow it!
+					err := addBlackHole(status.Client, status.Host.Name, target)
+					if err != nil {
+						t.showMessage("Error: " + err.Error())
+					} else {
+						t.showMessage("Blackhole added: " + target)
+					}
+				})
+				return
+			}
+
 			err := addBlackHole(status.Client, status.Host.Name, target)
 			if err != nil {
 				t.showMessage("Error: " + err.Error())
@@ -281,6 +296,21 @@ func (t *TUI) showInputForm(status HostStatus, actionType string) {
 		form.AddInputField("Source IP to block:", "", 30, nil, nil)
 		form.AddButton("Apply", func() {
 			sourceIP := form.GetFormItem(0).(*tview.InputField).GetText()
+
+			// Prevent self-lock
+			if status.SSH_SourceIP == sourceIP {
+				t.showConfirmDialog("WARNING: You are trying to block your own IP!", func() {
+					// if User don't care. Allow it!
+					err := addPartition(status.Client, status.Host.Name, sourceIP)
+					if err != nil {
+						t.showMessage("Error: " + err.Error())
+					} else {
+						t.showMessage("Partition added: " + sourceIP)
+					}
+				})
+				return
+			}
+
 			err := addPartition(status.Client, status.Host.Name, sourceIP)
 			if err != nil {
 				t.showMessage("Error: " + err.Error())
@@ -413,4 +443,18 @@ func (t *TUI) showRestoreMenu(status HostStatus) {
 
 	// Set root.
 	t.app.SetRoot(restoreList, true)
+}
+
+// showConfirm Dialog func
+func (t *TUI) showConfirmDialog(msg string, onConfirm func()) {
+	modal := tview.NewModal().SetText(msg).AddButtons([]string{"Yes", "No"}).SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		if buttonLabel == "Yes" {
+			onConfirm()
+		} else {
+			t.refreshHostList()
+			t.app.SetRoot(t.hostList, true)
+		}
+	})
+
+	t.app.SetRoot(modal, true)
 }

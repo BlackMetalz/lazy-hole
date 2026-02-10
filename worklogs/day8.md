@@ -146,3 +146,18 @@ Example:
 ```
 
 Nothing much to explain, build menu with those effects. Remove when selected! Added function helper `removeSingleEffect` to do it.
+
+# Fix missing issue from backlog for V1
+
+## Story 5.1 - Detect SSH source IP (prevent self-lock!)
+
+Flow
+```
+SSH connect → detectSSHSourceIP() → lưu vào HostStatus.SourceIP
+    ↓
+User select Blackhole/Partition → enter IP
+    ↓
+Check: target == SourceIP?
+    ├── NO → apply
+    └── YES → WARNING modal → confirm then apply
+```
