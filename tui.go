@@ -278,33 +278,81 @@ func (t *TUI) showInputForm(status HostStatus, actionType string) {
 			}
 		})
 	case "latency":
-		form.SetTitle(" Latency - " + status.Host.Name + " ")
-		form.AddInputField("Interface:", "eth0", 20, nil, nil)
-		form.AddInputField("Delay (e.g. 100ms): ", "", 20, nil, nil)
-		form.AddButton("Apply", func() {
-			iface := form.GetFormItem(0).(*tview.InputField).GetText()
-			delay := form.GetFormItem(1).(*tview.InputField).GetText()
-			err := addLatency(status.Client, status.Host.Name, iface, delay)
-			if err != nil {
-				t.showMessage("Error: " + err.Error())
-			} else {
-				t.showMessage("Latency added: " + delay)
-			}
-		})
+		// Call listInterfaces first before display form
+		interfaces, err := listInterfaces(status.Client)
+		if err != nil {
+			t.showMessage("Error listing interfaces: " + err.Error())
+			return
+		}
+
+		if len(interfaces) == 1 {
+			// 1 interface → show in title, no field needed!
+			form.SetTitle(fmt.Sprintf(" Latency - %s (%s) ", status.Host.Name, interfaces[0]))
+			form.AddInputField("Delay (e.g. 100ms): ", "", 20, nil, nil)
+			form.AddButton("Apply", func() {
+				iface := interfaces[0]
+				delay := form.GetFormItem(0).(*tview.InputField).GetText()
+				err := addLatency(status.Client, status.Host.Name, iface, delay)
+				if err != nil {
+					t.showMessage("Error: " + err.Error())
+				} else {
+					t.showMessage("Latency added: " + delay + " on " + iface)
+				}
+			})
+		} else {
+			// Multiple interfaces → dropdown
+			form.SetTitle(" Latency - " + status.Host.Name + " ")
+			form.AddDropDown("Interface:", interfaces, 0, nil)
+			form.AddInputField("Delay (e.g. 100ms): ", "", 20, nil, nil)
+			form.AddButton("Apply", func() {
+				_, iface := form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
+				delay := form.GetFormItem(1).(*tview.InputField).GetText()
+				err := addLatency(status.Client, status.Host.Name, iface, delay)
+				if err != nil {
+					t.showMessage("Error: " + err.Error())
+				} else {
+					t.showMessage("Latency added: " + delay + " on " + iface)
+				}
+			})
+		}
 	case "packetloss":
-		form.SetTitle(" Packet Loss - " + status.Host.Name + " ")
-		form.AddInputField("Interface:", "eth0", 20, nil, nil)
-		form.AddInputField("Loss % (e.g. 10%): ", "", 20, nil, nil)
-		form.AddButton("Apply", func() {
-			iface := form.GetFormItem(0).(*tview.InputField).GetText()
-			percent := form.GetFormItem(1).(*tview.InputField).GetText()
-			err := addPacketLoss(status.Client, status.Host.Name, iface, percent)
-			if err != nil {
-				t.showMessage("Error: " + err.Error())
-			} else {
-				t.showMessage("Packet Loss added: " + percent)
-			}
-		})
+		// Call listInterfaces first
+		interfaces, err := listInterfaces(status.Client)
+		if err != nil {
+			t.showMessage("Error listing interfaces: " + err.Error())
+			return
+		}
+
+		if len(interfaces) == 1 {
+			// 1 interface → show in title, no field needed!
+			form.SetTitle(fmt.Sprintf(" Packet Loss - %s (%s) ", status.Host.Name, interfaces[0]))
+			form.AddInputField("Loss % (e.g. 10): ", "", 20, nil, nil)
+			form.AddButton("Apply", func() {
+				iface := interfaces[0]
+				lossPercent := form.GetFormItem(0).(*tview.InputField).GetText()
+				err := addPacketLoss(status.Client, status.Host.Name, iface, lossPercent)
+				if err != nil {
+					t.showMessage("Error: " + err.Error())
+				} else {
+					t.showMessage("Packet loss added: " + lossPercent + "% on " + iface)
+				}
+			})
+		} else {
+			// Multiple interfaces → dropdown
+			form.SetTitle(" Packet Loss - " + status.Host.Name + " ")
+			form.AddDropDown("Interface:", interfaces, 0, nil)
+			form.AddInputField("Loss % (e.g. 10): ", "", 20, nil, nil)
+			form.AddButton("Apply", func() {
+				_, iface := form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
+				lossPercent := form.GetFormItem(1).(*tview.InputField).GetText()
+				err := addPacketLoss(status.Client, status.Host.Name, iface, lossPercent)
+				if err != nil {
+					t.showMessage("Error: " + err.Error())
+				} else {
+					t.showMessage("Packet loss added: " + lossPercent + "% on " + iface)
+				}
+			})
+		}
 
 	case "partition":
 		form.SetTitle(" Partition - " + status.Host.Name + " ")

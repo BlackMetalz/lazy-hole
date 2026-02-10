@@ -166,3 +166,11 @@ Check: target == SourceIP?
 Goal: when user press `q/ESC`, if rules active, ask quit anyway?
 
 Added both in run and refresh host list func!!
+
+## Implement list interface integration
+Instead of manually enter interface, let user select it!
+
+If only 1 interface return from listInterfaces func, skip fucking dropdown!
+
+And SetAcceptanceFunc() doesn't allow it edit! Hmm, not really, it doesn't block Backspace/Delete, it is other specific fucking events
+
