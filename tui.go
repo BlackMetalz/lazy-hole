@@ -193,11 +193,21 @@ func (t *TUI) showActionMenu(status HostStatus) {
 	actionList := tview.NewList()
 	actionList.SetTitle(" Actions for " + status.Host.Name + " ").SetBorder(true)
 
-	// if host without sudo, display warning and return
-	// Without sudo we can not do anything!
-	if !status.Sudo {
+	// Popup msg if host is not connected!
+	if !status.Connected {
 		// Modal equal to popup with msg
-		modal := tview.NewModal().SetText("This host has NO SUDO access!\nCan not do anything!").AddButtons([]string{"OK"}).SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		modal := tview.NewModal().SetText("This host is not connected!!\nCan't do anything!").AddButtons([]string{"OK"}).SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			// When user click ok, return to host list
+			t.app.SetRoot(t.layout, true)
+		})
+
+		t.app.SetRoot(modal, true)
+		return
+	} else if !status.Sudo {
+		// if host without sudo, display warning and return
+		// Without sudo we can not do anything!
+		// Modal equal to popup with msg
+		modal := tview.NewModal().SetText("This host has NO SUDO access!\nCan't do anything!").AddButtons([]string{"OK"}).SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			// When user click ok, return to host list
 			t.app.SetRoot(t.layout, true)
 		})
