@@ -19,6 +19,9 @@ type TUI struct {
 	// Widget display hosts list
 	hostList *tview.List
 
+	// Layout = hostList + footer
+	layout *tview.Flex
+
 	// Data from ssh test connection
 	statuses []HostStatus
 
@@ -98,13 +101,21 @@ func (t *TUI) Run() error {
 		if event.Rune() == 'r' {
 			t.refreshHostStatus()
 		}
+
+		// Story 6.2 - Help overlay
+		if event.Rune() == '?' {
+			t.showHelp()
+		}
 		return event
 	})
+
+	// Build layout = hostList + footer
+	t.buildLayout()
 
 	// SetRoot = which widget will display
 	// EnableMouse = allow mouse interaction
 	// Run() = when event loop, block until stop()
-	return t.app.SetRoot(t.hostList, true).EnableMouse(true).Run()
+	return t.app.SetRoot(t.layout, true).EnableMouse(true).Run()
 }
 
 // formatHostLabel create string display for 1 host
@@ -178,7 +189,7 @@ func (t *TUI) showActionMenu(status HostStatus) {
 		// Modal equal to popup with msg
 		modal := tview.NewModal().SetText("This host has NO SUDO access!\nCan not do anything!").AddButtons([]string{"OK"}).SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			// When user click ok, return to host list
-			t.app.SetRoot(t.hostList, true)
+			t.app.SetRoot(t.layout, true)
 		})
 
 		t.app.SetRoot(modal, true)
@@ -219,7 +230,7 @@ func (t *TUI) showActionMenu(status HostStatus) {
 
 	actionList.AddItem("Back", "Return to host list", 0, func() {
 		t.refreshHostList() // refresh data first
-		t.app.SetRoot(t.hostList, true)
+		t.app.SetRoot(t.layout, true)
 	})
 
 	// Keyboard handler for menu
@@ -228,7 +239,7 @@ func (t *TUI) showActionMenu(status HostStatus) {
 			// REFRESH THE FUCKING DATA!
 			t.refreshHostList()
 			// Return to host list
-			t.app.SetRoot(t.hostList, true)
+			t.app.SetRoot(t.layout, true)
 		}
 		return event
 	})
@@ -243,7 +254,7 @@ func (t *TUI) showMessage(msg string) {
 		// STILL NEED TO REFRESH FIRST, EVERY FUCKING TIME!!!
 		// When click OK, refresh, damn it!
 		t.refreshHostList()
-		t.app.SetRoot(t.hostList, true)
+		t.app.SetRoot(t.layout, true)
 	})
 
 	t.app.SetRoot(modal, true)
@@ -488,8 +499,16 @@ func (t *TUI) refreshHostList() {
 			t.refreshHostStatus()
 		}
 
+		// Story 6.2 - Help overlay
+		if event.Rune() == '?' {
+			t.showHelp()
+		}
+
 		return event
 	})
+
+	// Rebuild layout with new list
+	t.buildLayout()
 }
 
 // showRestoreMenu, func support for single restore action for specific host.
@@ -550,7 +569,7 @@ func (t *TUI) showConfirmDialog(msg string, onConfirm func()) {
 			onConfirm()
 		} else {
 			t.refreshHostList()
-			t.app.SetRoot(t.hostList, true)
+			t.app.SetRoot(t.layout, true)
 		}
 	})
 
@@ -585,7 +604,7 @@ func (t *TUI) showProtectedIPs() {
 
 	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
-			t.app.SetRoot(t.hostList, true)
+			t.app.SetRoot(t.layout, true)
 		}
 		return event
 	})
@@ -637,7 +656,40 @@ func (t *TUI) refreshHostStatus() {
 	t.refreshing = false // Unlock before showMessage
 	msg := fmt.Sprintf("Refreshed! %d/%d hosts connected", connected, len(t.statuses))
 	t.showMessage(msg)
-	// t.app.SetRoot(t.hostList, true)
-	// // Unlock
-	// t.refreshing = false
+}
+
+// buildLayout creates Flex layout = hostList + footer with shortcut hints
+func (t *TUI) buildLayout() {
+	// Set text in Footer bro!
+	footer := tview.NewTextView().
+		SetText(" (r) Refresh - (p) Protected IPs - (?) Help - (q) Quit - (ESC) Back").
+		SetTextAlign(tview.AlignCenter).
+		SetTextColor(tcell.ColorYellow)
+
+	t.layout = tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(t.hostList, 0, 1, true). // List takes all space
+		AddItem(footer, 1, 0, false)     // Footer = 1 line
+}
+
+// showHelp displays all keyboard shortcuts
+// with better format!
+func (t *TUI) showHelp() {
+	helpText := "Keyboard Shortcuts:\n\n" +
+		"Arrow Keys - Navigate hosts\n" +
+		"Enter - Select host\n" +
+		"Esc - Go back / Quit\n" +
+		"r - Refresh host status\n" +
+		"p - View protected IPs\n" +
+		"? - This help\n" +
+		"q - Quit\n\n" +
+		"Press OK to close."
+
+	modal := tview.NewModal().
+		SetText(helpText).
+		AddButtons([]string{"OK"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			t.app.SetRoot(t.layout, true)
+		})
+
+	t.app.SetRoot(modal, true)
 }

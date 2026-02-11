@@ -15,3 +15,15 @@ After hit button refresh:
 ![alt text](../images/12.png)
 
 And yeah, there is no guide for user know where the fuck is button r do. So we have to put that shit to 6.2
+
+## Story 6.2: Add help overlay
+Goal: When user press `?` in host list, show help overlay!
+
+Test case: Press `?` in host list, show help overlay, press `?` again, hide help overlay.
+
+work complete:
+![alt text](../images/13.png)
+
+![alt text](../images/14.png)
+
+But i'm fan of k9s style, i think i need header section and button will be display like k9s style!
