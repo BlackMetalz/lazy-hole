@@ -51,3 +51,14 @@ This look fun: https://patorjk.com/software/taag/#p=display&f=Small+Block&t=lazy
 
 LGTM
 ![alt text](../images/17.png)
+
+
+## Story 6.3: Add filter for host
+
+Holy fucking shit, I'm feeling lazy right now. Just vibe code! LOL
+
+So Goal is add handler for key `/`. It will popup a filter with input field. User can type to filter host, and press enter to apply filter. Press escape to cancel filter.
+
+Filter work well!
+
+

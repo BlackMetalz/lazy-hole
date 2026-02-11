@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	// tcell is a lib low-level that handle keyboard/mouse events
 	// tview ise tcell
@@ -27,6 +28,9 @@ type TUI struct {
 
 	// Flag for lock refresh
 	refreshing bool
+
+	// For filter Text
+	filterText string
 }
 
 // NewTUI creates a new TUI instance with data from SSH test connection
@@ -106,6 +110,12 @@ func (t *TUI) Run() error {
 		if event.Rune() == '?' {
 			t.showHelp()
 		}
+
+		// Stort 6.3 - Filter host
+		if event.Rune() == '/' {
+			t.showFilterDialog()
+		}
+
 		return event
 	})
 
@@ -457,18 +467,28 @@ func (t *TUI) refreshHostList() {
 	allEffects := effectTracker.GetAll()
 	t.hostList.SetTitle(fmt.Sprintf(" Hosts (tracked: %d) ", len(allEffects)))
 
-	// Add hosts to list
-	for i, status := range t.statuses {
+	// Add hosts to list (with filter)
+	displayIdx := 0
+	for _, status := range t.statuses {
+		// Story 6.3 - Filter by name
+		if t.filterText != "" && !strings.Contains(
+			strings.ToLower(status.Host.Name),
+			strings.ToLower(t.filterText),
+		) {
+			continue // Skip host not matching filter
+		}
+
 		label := t.formatHostLabel(status)
 		var shortKey rune
-		if i < 9 {
-			shortKey = rune('1' + i)
+		if displayIdx < 9 {
+			shortKey = rune('1' + displayIdx)
 		} else {
 			shortKey = 0 // No shortkey for more than 9 hosts
 		}
 		t.hostList.AddItem(label, status.Host.IP, shortKey, func() {
 			t.showActionMenu(status)
 		})
+		displayIdx++
 	}
 
 	// Re-add keyboard handler because new list!
@@ -502,6 +522,11 @@ func (t *TUI) refreshHostList() {
 		// Story 6.2 - Help overlay
 		if event.Rune() == '?' {
 			t.showHelp()
+		}
+
+		// Stort 6.3 - Filter host
+		if event.Rune() == '/' {
+			t.showFilterDialog()
 		}
 
 		return event
@@ -661,9 +686,13 @@ func (t *TUI) refreshHostStatus() {
 // buildLayout creates Flex layout = K9s-style header + hostList
 func (t *TUI) buildLayout() {
 	// LEFT = version info (dynamic from root_cmd.go)
+	leftText := "[yellow]lazy-hole[-] v" + version
+	if t.filterText != "" {
+		leftText += "\n[red]filter host: " + t.filterText + "[-]"
+	}
 	headerLeft := tview.NewTextView().
 		SetDynamicColors(true).
-		SetText("[yellow]lazy-hole[-] v" + version)
+		SetText(leftText)
 
 	// MIDDLE = commands in 2 columns
 	headerMid := tview.NewTextView().
@@ -671,7 +700,8 @@ func (t *TUI) buildLayout() {
 		SetText(
 			"[aqua](r)[-] Refresh    [aqua](ESC)[-] Back\n" +
 				"[aqua](p)[-] Protected  [aqua](Enter)[-] Select\n" +
-				"[aqua](?)[-] Help       [aqua](q)[-] Quit",
+				"[aqua](?)[-] Help       [aqua](q)[-] Quit\n" +
+				"[aqua](/)[-] Filter",
 		)
 
 	// RIGHT = ASCII art logo (block chars)
@@ -700,6 +730,7 @@ func (t *TUI) showHelp() {
 		"Esc - Go back / Quit\n" +
 		"r - Refresh host status\n" +
 		"p - View protected IPs\n" +
+		"/ - Filter hosts\n" +
 		"? - This help\n" +
 		"q - Quit\n\n" +
 		"Press OK to close."
@@ -712,4 +743,38 @@ func (t *TUI) showHelp() {
 		})
 
 	t.app.SetRoot(modal, true)
+}
+
+// showFilterDialog displays popup for user to type filter text
+func (t *TUI) showFilterDialog() {
+	inputField := tview.NewInputField().
+		SetLabel("Filter host: ").
+		SetText(t.filterText). // Show current filter
+		SetFieldWidth(30)
+
+	inputField.SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEnter {
+			// Apply filter
+			t.filterText = inputField.GetText()
+			t.refreshHostList()
+			t.app.SetRoot(t.layout, true)
+		} else if key == tcell.KeyEscape {
+			// Cancel, keep old filter
+			t.app.SetRoot(t.layout, true)
+		}
+	})
+
+	// Center the input in a modal-like layout
+	// FlexRow (Spacer, InputRow, Spacer)
+	inputRow := tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(nil, 0, 1, false).
+		AddItem(inputField, 40, 0, true).
+		AddItem(nil, 0, 1, false)
+
+	flex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(inputRow, 1, 0, true).
+		AddItem(nil, 0, 1, false)
+
+	t.app.SetRoot(flex, true)
 }
