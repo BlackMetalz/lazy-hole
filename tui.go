@@ -179,6 +179,8 @@ func (t *TUI) formatHostLabel(status HostStatus) string {
 			effectStr += fmt.Sprintf(" (PacketLoss:%s%% %s)", e.Value, e.Target)
 		case EffectPartition:
 			effectStr += fmt.Sprintf(" (Partition:%s)", e.Target)
+		case EffectPortBlock:
+			effectStr += fmt.Sprintf(" (PortBlock:%s:%s)", e.Target, e.Value)
 		}
 	}
 
@@ -230,6 +232,10 @@ func (t *TUI) showActionMenu(status HostStatus) {
 	})
 	actionList.AddItem("IPtables Partition", "Block source IP", 'i', func() {
 		t.showInputForm(status, "partition")
+	})
+
+	actionList.AddItem("Port Block", "Block specific port from IP", 'd', func() {
+		t.showInputForm(status, "portblock")
 	})
 
 	// Restore single effect
@@ -422,6 +428,35 @@ func (t *TUI) showInputForm(status HostStatus, actionType string) {
 				t.showMessage("Error: " + err.Error())
 			} else {
 				t.showMessage("Partition added: " + sourceIP)
+			}
+		})
+
+	case "portblock":
+		form.SetTitle(" Port Block - " + status.Host.Name + " ")
+		form.AddInputField("Source IP:", "", 30, nil, nil)
+		form.AddInputField("Port (e.g. 3306):", "", 10, nil, nil)
+		form.AddButton("Apply", func() {
+			sourceIP := form.GetFormItem(0).(*tview.InputField).GetText()
+			port := form.GetFormItem(1).(*tview.InputField).GetText()
+
+			// Prevent self-lock
+			if status.SSH_SourceIP == sourceIP {
+				t.showConfirmDialog("WARNING: You are trying to block your own IP!", func() {
+					err := addPortBlock(status.Client, status.Host.Name, sourceIP, port)
+					if err != nil {
+						t.showMessage("Error: " + err.Error())
+					} else {
+						t.showMessage("Port blocked: " + sourceIP + ":" + port)
+					}
+				})
+				return
+			}
+
+			err := addPortBlock(status.Client, status.Host.Name, sourceIP, port)
+			if err != nil {
+				t.showMessage("Error: " + err.Error())
+			} else {
+				t.showMessage("Port blocked: " + sourceIP + ":" + port)
 			}
 		})
 	}

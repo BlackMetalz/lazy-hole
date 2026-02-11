@@ -61,4 +61,18 @@ So Goal is add handler for key `/`. It will popup a filter with input field. Use
 
 Filter work well!
 
+# New Feature: Block specific port on specific IP
+Just vibe code, I'm lazy today bro!
 
+Holy fucking shiet:
+```
+UNAVAILABLE (code 503): No capacity available for model claude-opus-4-6-thinking on the server
+```
+
+And yeah support TCP Port only, because at this time I never use any scenario that need block UDP!
+
+Port block need only 2 params (Port + IP), so i just add 2 params to action menu! No need to create new handler for port block
+
+Vibe code added
+- new const effect `EffectPortBlock`
+- Added 2 new func for add/restore: `addPortBlock` + `removePortBlock`

@@ -284,6 +284,59 @@ func removePartition(client *ssh.Client, hostname, sourceIP string) error {
 	return nil
 }
 
+// Block specific port from source IP
+func addPortBlock(client *ssh.Client, hostname, sourceIP, port string) error {
+	if net.ParseIP(sourceIP) == nil {
+		return fmt.Errorf("invalid IP: %s", sourceIP)
+	}
+
+	// Check if rule exists first
+	checkCmd := fmt.Sprintf("sudo iptables -C INPUT -s %s -p tcp --dport %s -j DROP", sourceIP, port)
+	checkResult, _ := runCommand(client, checkCmd)
+	if checkResult.ExitCode == 0 {
+		return fmt.Errorf("port block rule already exists for %s:%s", sourceIP, port)
+	}
+
+	cmd := fmt.Sprintf("sudo iptables -A INPUT -s %s -p tcp --dport %s -j DROP", sourceIP, port)
+	result, err := runCommand(client, cmd)
+	if err != nil {
+		return fmt.Errorf("failed to add port block: %w", err)
+	}
+
+	if result.ExitCode != 0 {
+		return fmt.Errorf("command failed: %s", result.Stderr)
+	} else {
+		effectTracker.Add(hostname, ActiveEffect{
+			Type:   EffectPortBlock,
+			Target: sourceIP,
+			Value:  port,
+		})
+	}
+
+	return nil
+}
+
+// Remove port block
+func removePortBlock(client *ssh.Client, hostname, sourceIP, port string) error {
+	cmd := fmt.Sprintf("sudo iptables -D INPUT -s %s -p tcp --dport %s -j DROP", sourceIP, port)
+	result, err := runCommand(client, cmd)
+	if err != nil {
+		return fmt.Errorf("failed to remove port block: %w", err)
+	}
+
+	if result.ExitCode != 0 {
+		return fmt.Errorf("command failed: %s", result.Stderr)
+	} else {
+		effectTracker.Remove(hostname, ActiveEffect{
+			Type:   EffectPortBlock,
+			Target: sourceIP,
+			Value:  port,
+		})
+	}
+
+	return nil
+}
+
 // Restore single host - remove all effects passed into that fucking host
 func restoreHost(client *ssh.Client, hostname string) error {
 
@@ -302,6 +355,8 @@ func restoreHost(client *ssh.Client, hostname string) error {
 			err = removeTCRules(client, hostname, effect.Target)
 		case EffectPartition:
 			err = removePartition(client, hostname, effect.Target)
+		case EffectPortBlock:
+			err = removePortBlock(client, hostname, effect.Target, effect.Value)
 		}
 
 		if err != nil {
@@ -366,6 +421,8 @@ func removeSingleEffect(client *ssh.Client, hostname string, effect ActiveEffect
 		cmd = fmt.Sprintf("sudo tc qdisc del dev %s root", effect.Target)
 	case EffectPartition:
 		cmd = fmt.Sprintf("sudo iptables -D INPUT -s %s -j DROP", effect.Target)
+	case EffectPortBlock:
+		cmd = fmt.Sprintf("sudo iptables -D INPUT -s %s -p tcp --dport %s -j DROP", effect.Target, effect.Value)
 	}
 
 	_, err := runCommand(client, cmd)
