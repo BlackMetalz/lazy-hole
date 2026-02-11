@@ -21,6 +21,9 @@ type TUI struct {
 
 	// Data from ssh test connection
 	statuses []HostStatus
+
+	// Flag for lock refresh
+	refreshing bool
 }
 
 // NewTUI creates a new TUI instance with data from SSH test connection
@@ -89,6 +92,11 @@ func (t *TUI) Run() error {
 		// Story 5.3 - View protected IPs
 		if event.Rune() == 'p' {
 			t.showProtectedIPs()
+		}
+
+		// Story 6.1 - Refresh host
+		if event.Rune() == 'r' {
+			t.refreshHostStatus()
 		}
 		return event
 	})
@@ -476,6 +484,10 @@ func (t *TUI) refreshHostList() {
 			t.showProtectedIPs()
 		}
 
+		if event.Rune() == 'r' {
+			t.refreshHostStatus()
+		}
+
 		return event
 	})
 }
@@ -579,4 +591,53 @@ func (t *TUI) showProtectedIPs() {
 	})
 
 	t.app.SetRoot(list, true)
+}
+
+// Refresh host func
+func (t *TUI) refreshHostStatus() {
+
+	// Prevent spam refresh!
+	if t.refreshing {
+		t.showMessage("Already refreshing, hold on!")
+		return // hold on!
+	}
+
+	t.refreshing = true // Lock
+
+	// Show refreshing... msg
+	t.hostList.SetTitle(" Refreshing... ")
+	t.app.ForceDraw() // this does force render immediately
+
+	// Re0test ssh to all hosts
+	// Get hosts from current statuses
+	var hosts []Host
+	for _, s := range t.statuses {
+		// Close old connections
+		if s.Client != nil {
+			s.Client.Close()
+		}
+
+		hosts = append(hosts, s.Host)
+	}
+
+	// Re-connect
+	t.statuses = testAllHosts(hosts)
+
+	// Refresh display
+	t.refreshHostList()
+
+	// Count connected hosts
+	connected := 0
+	for _, s := range t.statuses {
+		if s.Connected {
+			connected++
+		}
+	}
+
+	t.refreshing = false // Unlock before showMessage
+	msg := fmt.Sprintf("Refreshed! %d/%d hosts connected", connected, len(t.statuses))
+	t.showMessage(msg)
+	// t.app.SetRoot(t.hostList, true)
+	// // Unlock
+	// t.refreshing = false
 }

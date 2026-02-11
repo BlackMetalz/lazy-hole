@@ -5,3 +5,5 @@ It can be persist effects to file. Not decided yet. Maybe v3 xDD
 In scenario there is more than 9 hosts, we can not have enough shortkey for them!
 
 Make them work like search in K9S
+
+# Make host list order is persistent, follow order in config!
