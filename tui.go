@@ -658,17 +658,37 @@ func (t *TUI) refreshHostStatus() {
 	t.showMessage(msg)
 }
 
-// buildLayout creates Flex layout = hostList + footer with shortcut hints
+// buildLayout creates Flex layout = K9s-style header + hostList
 func (t *TUI) buildLayout() {
-	// Set text in Footer bro!
-	footer := tview.NewTextView().
-		SetText(" (r) Refresh - (p) Protected IPs - (?) Help - (q) Quit - (ESC) Back").
-		SetTextAlign(tview.AlignCenter).
-		SetTextColor(tcell.ColorYellow)
+	// LEFT = version info (dynamic from root_cmd.go)
+	headerLeft := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText("[yellow]lazy-hole[-] v" + version)
 
+	// MIDDLE = commands in 2 columns
+	headerMid := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText(
+			"[aqua](r)[-] Refresh    [aqua](ESC)[-] Back\n" +
+				"[aqua](p)[-] Protected  [aqua](Enter)[-] Select\n" +
+				"[aqua](?)[-] Help       [aqua](q)[-] Quit",
+		)
+
+	// RIGHT = ASCII art logo (block chars)
+	headerRight := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText("[yellow]" + logo + "[-]")
+
+	// Header = horizontal flex (left + mid + right)
+	header := tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(headerLeft, 20, 0, false). // Fix 20 chars
+		AddItem(headerMid, 0, 1, false).   // Flexible middle
+		AddItem(headerRight, 25, 0, false) // Fix 22 chars for logo
+
+	// Main layout = vertical flex
 	t.layout = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(t.hostList, 0, 1, true). // List takes all space
-		AddItem(footer, 1, 0, false)     // Footer = 1 line
+		AddItem(header, 5, 0, false).   // Header 5 lines (logo height)
+		AddItem(t.hostList, 0, 1, true) // List with focus
 }
 
 // showHelp displays all keyboard shortcuts

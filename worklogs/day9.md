@@ -27,3 +27,27 @@ work complete:
 ![alt text](../images/14.png)
 
 But i'm fan of k9s style, i think i need header section and button will be display like k9s style!
+
+First SetDynamicColors() is must have! for dynamic color
+```go
+		SetText("[aqua](r)[-] Refresh [aqua](p)[-] Protected IPs [aqua](?)[-] Help [aqua](q)[-] Quit [aqua](ESC)[-] Back").
+```
+
+Will give output
+![alt text](../images/15.png)
+it looks much better!
+
+Ok finally update
+![alt text](../images/16.png)
+
+hmm, Still not interest. I want to make it more like k9s style
+
+- left header: version
+- middle header: command list
+- right header: show label like lazy. I will vibe coding at this time LOLLL
+
+This look fun: https://patorjk.com/software/taag/#p=display&f=Small+Block&t=lazy&x=none&v=4&h=4&w=80&we=false
++1 useful tool
+
+LGTM
+![alt text](../images/17.png)

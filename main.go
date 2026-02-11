@@ -1,5 +1,11 @@
 package main
 
+const logo = ` _
+| | __ _ ___ _  _
+| |/ _' |_ /| || |
+|_|\__,_/__| \_, |
+             |__/`
+
 func main() {
 
 	Execute()
