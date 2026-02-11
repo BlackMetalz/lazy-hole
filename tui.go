@@ -686,7 +686,7 @@ func (t *TUI) refreshHostStatus() {
 // buildLayout creates Flex layout = K9s-style header + hostList
 func (t *TUI) buildLayout() {
 	// LEFT = version info (dynamic from root_cmd.go)
-	leftText := "[yellow]lazy-hole[-] v" + version
+	leftText := "[yellow]lazy-hole[-] " + version
 	if t.filterText != "" {
 		leftText += "\n[red]filtered keyword: " + t.filterText + "[-]"
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	version    = "0.1.0"
+	version    = "v0.1.0"
 	configPath string
 )
 
@@ -32,7 +32,7 @@ var rootCmd = &cobra.Command{
 		// fmt.Println("TUI mode coming soon...")
 		// Already done in begin of EPIC 4 xD
 
-		fmt.Println("lazy-hole v" + version)
+		fmt.Println("lazy-hole " + version)
 		fmt.Printf("Loaded %d hosts from %s\n", len(config.Hosts), configPath)
 
 		// Test SSH Connection to each host. (Sequential)

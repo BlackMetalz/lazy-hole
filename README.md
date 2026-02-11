@@ -31,7 +31,6 @@ sudo mv /tmp/lazy-hole /usr/local/bin/lazy-hole
 #### macOS (Apple Silicon)
 ```bash
 curl -sL https://github.com/BlackMetalz/lazy-hole/releases/latest/download/lazy-hole-darwin-arm64 -o /tmp/lazy-hole
-curl -sL https://github.com/BlackMetalz/lazy-hole/releases/latest/download/lazy-hole-darwin-arm64 -o /tmp/lazy-hole
 chmod +x /tmp/lazy-hole
 sudo mv /tmp/lazy-hole /usr/local/bin/lazy-hole
 ```
