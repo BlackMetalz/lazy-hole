@@ -1,0 +1,46 @@
+# Release workflow - triggered on tag push
+# Builds binaries for Linux + macOS and creates GitHub Release
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on tags like v1.0.0, v0.1.0, etc.
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # fix permission to create release
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25.0'
+
+    - name: Run tests
+      run: go test -v ./...
+
+    - name: Build Linux amd64
+      run: GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${{ github.ref_name }}" -o lazy-hole-linux-amd64 .
+
+    - name: Build macOS amd64
+      run: GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=${{ github.ref_name }}" -o lazy-hole-darwin-amd64 .
+
+    - name: Build macOS arm64 (Apple Silicon)
+      run: GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${{ github.ref_name }}" -o lazy-hole-darwin-arm64 .
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          lazy-hole-linux-amd64
+          lazy-hole-darwin-amd64
+          lazy-hole-darwin-arm64
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

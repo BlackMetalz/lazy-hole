@@ -688,7 +688,7 @@ func (t *TUI) buildLayout() {
 	// LEFT = version info (dynamic from root_cmd.go)
 	leftText := "[yellow]lazy-hole[-] v" + version
 	if t.filterText != "" {
-		leftText += "\n[red]filter host: " + t.filterText + "[-]"
+		leftText += "\n[red]filtered keyword: " + t.filterText + "[-]"
 	}
 	headerLeft := tview.NewTextView().
 		SetDynamicColors(true).

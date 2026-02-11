@@ -12,8 +12,26 @@ A CLI/TUI tool to simulate network failures for testing distributed systems (lik
 Run on jump host → SSH to target hosts → Execute network commands remotely
 
 # Installation
-- Current state: story 1.1
+
+### Build from source
 ```bash
 go mod tidy
-go run .
+go build -o lazy-hole .
+```
+
+### Install from release
+
+#### Ubuntu/Linux (amd64)
+```bash
+curl -sL https://github.com/BlackMetalz/lazy-hole/releases/latest/download/lazy-hole-linux-amd64 -o /tmp/lazy-hole
+chmod +x /tmp/lazy-hole
+sudo mv /tmp/lazy-hole /usr/local/bin/lazy-hole
+```
+
+#### macOS (Apple Silicon)
+```bash
+curl -sL https://github.com/BlackMetalz/lazy-hole/releases/latest/download/lazy-hole-darwin-arm64 -o /tmp/lazy-hole
+curl -sL https://github.com/BlackMetalz/lazy-hole/releases/latest/download/lazy-hole-darwin-arm64 -o /tmp/lazy-hole
+chmod +x /tmp/lazy-hole
+sudo mv /tmp/lazy-hole /usr/local/bin/lazy-hole
 ```
