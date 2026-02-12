@@ -60,7 +60,14 @@ func (t *EffectTracker) Remove(hostname string, effect ActiveEffect) {
 func (t *EffectTracker) Get(hostname string) []ActiveEffect {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return t.effects[hostname]
+
+	// Return internal mutable state
+	// Fix issue: when i added 6 ip for blackhole. in 3 hosts. But when i quit
+	// it failed to clean all effects.
+	original := t.effects[hostname]
+	copied := make([]ActiveEffect, len(original)) // Allocate slice
+	copy(copied, original)                        // Copy data into slice since copy() is just shallow copy!
+	return copied
 }
 
 // GetAll, return all effects for all hosts
