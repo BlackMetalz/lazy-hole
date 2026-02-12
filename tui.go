@@ -298,32 +298,66 @@ func (t *TUI) showInputForm(status HostStatus, actionType string) {
 	switch actionType {
 	case "blackhole":
 		form.SetTitle(" Blackhole - " + status.Host.Name + " ")
-		// AddInputField(label, value, width, validateFunc, doneFunc)
-		form.AddInputField("Target IP/CIDR", "", 30, nil, nil)
+		// Feb 12, 2026. I added feature to support multiple ip for blackhole
+		// Support comma-separated IPs, e.g. 192.168.3.11,192.168.13.11
+		form.AddInputField("Target IP/CIDR (comma-separated)", "", 50, nil, nil)
 		form.AddButton("Apply", func() {
-			// GetFormItem(0) = Get the first field
-			// .(*tview.InputField) = type assertion?
-			target := form.GetFormItem(0).(*tview.InputField).GetText()
+			input := form.GetFormItem(0).(*tview.InputField).GetText()
 
-			// Story 5.1, prevent self-lock
-			if status.SSH_SourceIP == target {
-				t.showConfirmDialog("WARNING: You are trying to block your own IP!\nAre you sure?", func() {
-					// if User don't care. Allow it!
-					err := addBlackHole(status.Client, status.Host.Name, target)
-					if err != nil {
-						t.showMessage("Error: " + err.Error())
-					} else {
-						t.showMessage("Blackhole added: " + target)
-					}
-				})
+			// Split by comma and trim whitespace
+			parts := strings.Split(input, ",")
+			var targets []string
+			for _, p := range parts {
+				trimmed := strings.TrimSpace(p)
+				// if trimmed is not empty, append to target lists
+				if trimmed != "" {
+					targets = append(targets, trimmed)
+				}
+			}
+
+			// Count
+			if len(targets) == 0 {
+				t.showMessage("Error: no valid targets provided")
 				return
 			}
 
-			err := addBlackHole(status.Client, status.Host.Name, target)
-			if err != nil {
-				t.showMessage("Error: " + err.Error())
+			// Check self-lock for any of the targets
+			hasSelfLock := false
+			for _, target := range targets {
+				if status.SSH_SourceIP == target {
+					hasSelfLock = true
+					break
+				}
+			}
+
+			// Func that actually applies all blackholes and shows summary
+			// Apply for each target, if getting error, append to errors slice!
+			applyAll := func() {
+				success := 0
+				var errors []string
+				for _, target := range targets {
+					err := addBlackHole(status.Client, status.Host.Name, target)
+					if err != nil {
+						errors = append(errors, target+": "+err.Error())
+					} else {
+						success++
+					}
+				}
+
+				// Build summary message
+				msg := fmt.Sprintf("Blackhole: %d/%d added", success, len(targets))
+				// If there are errors, append them to the message
+				if len(errors) > 0 {
+					msg += "\n\nFailed:\n" + strings.Join(errors, "\n")
+				}
+				t.showMessage(msg)
+			}
+
+			// Check self lock, prevent blackhole yourself LOL
+			if hasSelfLock {
+				t.showConfirmDialog("WARNING: One of the targets is your SSH source IP!\nAre you sure?", applyAll)
 			} else {
-				t.showMessage("Blackhole added: " + target)
+				applyAll()
 			}
 		})
 	case "latency":
