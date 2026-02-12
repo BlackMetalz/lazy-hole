@@ -125,7 +125,7 @@ func (t *TUI) Run() error {
 	// SetRoot = which widget will display
 	// EnableMouse = allow mouse interaction
 	// Run() = when event loop, block until stop()
-	return t.app.SetRoot(t.layout, true).EnableMouse(true).Run()
+	return t.app.SetRoot(t.layout, true).Run()
 }
 
 // formatHostLabel create string display for 1 host
