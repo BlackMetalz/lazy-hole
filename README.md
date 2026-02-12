@@ -13,10 +13,10 @@ A CLI/TUI tool to simulate network failures for testing distributed systems (lik
 Run on jump host → SSH to target hosts → Execute network commands remotely
 
 ## Features
-- **Blackhole routing** — Drop all traffic to specific IP/CIDR (ip route blackhole)
+- **Blackhole routing** — Drop all traffic to specific IP/CIDR (ip route blackhole). Simulates DNS/routing failure, network down!
 - **Latency injection** — Add delay to network interfaces (tc qdisc)
 - **Packet loss** — Simulate unreliable network (tc qdisc)
-- **Network partition** — Block traffic from specific source IPs (iptables)
+- **Network partition** — Block traffic from specific source IPs (iptables). Simulates firewall misconfiguration!
 - **Port blocking** — Block specific port from source IP (iptables)
 - **Auto-restore** — Cleanup all effects on exit (Ctrl+C safe)
 - **K9s-style TUI** — Interactive terminal UI with keyboard shortcuts (Motivation: I love k9s)

@@ -26,3 +26,11 @@ Exists test
 
 Ready to rock. Haha
 So shit load of issue when we use it, not only for blackhole but also for others. I will fix them one by one!
+
+And yeah, work with this shit give me a lot of questions. What is fucking different between blackhole and iptables block?
+- blackhole: layer 3, drop all traffic to specific IP/CIDR
+- iptables: layer 4, drop all traffic to specific port from specific IP
+
+So literally same purpose but different layer! Haha.
+
+So I need to make same feature for network partition like blackhole, support multi IP input. This is pretty simple to understand so I will ask for vibe code and I will review generated code!
