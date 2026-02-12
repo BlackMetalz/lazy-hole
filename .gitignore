@@ -36,3 +36,5 @@ tmp/
 sample/live.yaml
 sample/single.yaml
 .DS_Store
+.vscode
+lazy-hole

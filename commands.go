@@ -43,6 +43,8 @@ func addBlackHole(client *ssh.Client, hostname, target string) error {
 			return fmt.Errorf("Route already exists: %s", target)
 		}
 
+		actionLogger.Log(hostname, "BLACKHOLE ADD", "target="+target, "FAILED: "+result.Stderr)
+
 		// return other error
 		return fmt.Errorf("Command failed: %s", result.Stderr)
 	} else {
@@ -52,6 +54,8 @@ func addBlackHole(client *ssh.Client, hostname, target string) error {
 			Target: target,
 			Value:  "", // Blackhole doesn't require value.
 		})
+
+		actionLogger.Log(hostname, "BLACKHOLE ADD", "target="+target, "SUCCESS")
 	}
 
 	return nil
@@ -79,6 +83,7 @@ func removeBlackHole(client *ssh.Client, hostname, target string) error {
 			return fmt.Errorf("Route not exists: %s", target)
 		}
 
+		actionLogger.Log(hostname, "BLACKHOLE DEL", "target="+target, "FAILED: "+result.Stderr)
 		// return other error
 		return fmt.Errorf("Command failed: %s", result.Stderr)
 	} else {
@@ -88,6 +93,7 @@ func removeBlackHole(client *ssh.Client, hostname, target string) error {
 			Target: target,
 			Value:  "",
 		})
+		actionLogger.Log(hostname, "BLACKHOLE DEL", "target="+target, "SUCCESS")
 	}
 
 	return nil
@@ -149,6 +155,7 @@ func addLatency(client *ssh.Client, hostname, iface, delay string) error {
 				return fmt.Errorf("Change tc qdisc failed: %s", result.Stderr)
 			}
 		} else {
+			actionLogger.Log(hostname, "LATENCY ADD", "iface="+iface+" delay="+delay, "FAILED: "+result.Stderr)
 			return fmt.Errorf("Command failed: %s", result.Stderr)
 		}
 	} else {
@@ -158,6 +165,7 @@ func addLatency(client *ssh.Client, hostname, iface, delay string) error {
 			Target: iface,
 			Value:  delay,
 		})
+		actionLogger.Log(hostname, "LATENCY ADD", "iface="+iface+" delay="+delay, "SUCCESS")
 	}
 
 	return nil
@@ -177,6 +185,7 @@ func removeTCRules(client *ssh.Client, hostname, iface string) error {
 			return fmt.Errorf("no tc rules on %s", iface)
 		}
 
+		actionLogger.Log(hostname, "LATENCY DEL", "iface="+iface, "FAILED: "+result.Stderr)
 		return fmt.Errorf("command failed: %s", result.Stderr)
 	} else {
 		effectTracker.Remove(hostname, ActiveEffect{
@@ -184,6 +193,7 @@ func removeTCRules(client *ssh.Client, hostname, iface string) error {
 			Target: iface,
 			Value:  "", // remember no need value i guess?
 		})
+		actionLogger.Log(hostname, "LATENCY DEL", "iface="+iface, "SUCCESS")
 	}
 
 	return nil
@@ -210,6 +220,7 @@ func addPacketLoss(client *ssh.Client, hostname, iface, percent string) error {
 				return fmt.Errorf("Change failed: %s", result.Stderr)
 			}
 		} else {
+			actionLogger.Log(hostname, "PACKETLOSS ADD", "iface="+iface+" loss="+percent, "FAILED: "+result.Stderr)
 			return fmt.Errorf("Command failed: %s", result.Stderr)
 		}
 	} else {
@@ -218,6 +229,7 @@ func addPacketLoss(client *ssh.Client, hostname, iface, percent string) error {
 			Target: iface,
 			Value:  percent,
 		})
+		actionLogger.Log(hostname, "PACKETLOSS ADD", "iface="+iface+" loss="+percent, "SUCCESS")
 	}
 
 	return nil
@@ -243,6 +255,7 @@ func addPartition(client *ssh.Client, hostname, sourceIP string) error {
 	}
 
 	if result.ExitCode != 0 {
+		actionLogger.Log(hostname, "PARTITION ADD", "source="+sourceIP, "FAILED: "+result.Stderr)
 		return fmt.Errorf("Command failed: %s", result.Stderr)
 	} else {
 		effectTracker.Add(hostname, ActiveEffect{
@@ -250,6 +263,7 @@ func addPartition(client *ssh.Client, hostname, sourceIP string) error {
 			Target: sourceIP,
 			Value:  "",
 		})
+		actionLogger.Log(hostname, "PARTITION ADD", "source="+sourceIP, "SUCCESS")
 	}
 
 	return nil
@@ -272,6 +286,7 @@ func removePartition(client *ssh.Client, hostname, sourceIP string) error {
 		if strings.Contains(result.Stderr, "Bad rule (does a matching rule exist in that chain?)") {
 			return fmt.Errorf("no partition rule to remove for %s", sourceIP)
 		}
+		actionLogger.Log(hostname, "PARTITION DEL", "source="+sourceIP, "FAILED: "+result.Stderr)
 		return fmt.Errorf("command failed: %s", result.Stderr)
 	} else {
 		effectTracker.Remove(hostname, ActiveEffect{
@@ -279,6 +294,7 @@ func removePartition(client *ssh.Client, hostname, sourceIP string) error {
 			Target: sourceIP,
 			Value:  "",
 		})
+		actionLogger.Log(hostname, "PARTITION DEL", "source="+sourceIP, "SUCCESS")
 	}
 
 	return nil
@@ -304,6 +320,7 @@ func addPortBlock(client *ssh.Client, hostname, sourceIP, port string) error {
 	}
 
 	if result.ExitCode != 0 {
+		actionLogger.Log(hostname, "PORTBLOCK ADD", "source="+sourceIP+" port="+port, "FAILED: "+result.Stderr)
 		return fmt.Errorf("command failed: %s", result.Stderr)
 	} else {
 		effectTracker.Add(hostname, ActiveEffect{
@@ -311,6 +328,7 @@ func addPortBlock(client *ssh.Client, hostname, sourceIP, port string) error {
 			Target: sourceIP,
 			Value:  port,
 		})
+		actionLogger.Log(hostname, "PORTBLOCK ADD", "source="+sourceIP+" port="+port, "SUCCESS")
 	}
 
 	return nil
@@ -325,6 +343,7 @@ func removePortBlock(client *ssh.Client, hostname, sourceIP, port string) error 
 	}
 
 	if result.ExitCode != 0 {
+		actionLogger.Log(hostname, "PORTBLOCK DEL", "source="+sourceIP+" port="+port, "FAILED: "+result.Stderr)
 		return fmt.Errorf("command failed: %s", result.Stderr)
 	} else {
 		effectTracker.Remove(hostname, ActiveEffect{
@@ -332,6 +351,7 @@ func removePortBlock(client *ssh.Client, hostname, sourceIP, port string) error 
 			Target: sourceIP,
 			Value:  port,
 		})
+		actionLogger.Log(hostname, "PORTBLOCK DEL", "source="+sourceIP+" port="+port, "SUCCESS")
 	}
 
 	return nil
@@ -367,6 +387,7 @@ func restoreHost(client *ssh.Client, hostname string) error {
 
 	// Clear all tracked effects for this host in memory
 	effectTracker.Clear(hostname)
+	actionLogger.Log(hostname, "RESTORE HOST", "removed all effects", "SUCCESS")
 	return nil
 }
 

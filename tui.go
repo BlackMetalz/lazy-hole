@@ -111,9 +111,14 @@ func (t *TUI) Run() error {
 			t.showHelp()
 		}
 
-		// Stort 6.3 - Filter host
+		// Story 6.3 - Filter host
 		if event.Rune() == '/' {
 			t.showFilterDialog()
+		}
+
+		// Story xx.xx (no idea) - View history
+		if event.Rune() == 'h' {
+			t.showHistory()
 		}
 
 		return event
@@ -645,6 +650,11 @@ func (t *TUI) refreshHostList() {
 			t.showFilterDialog()
 		}
 
+		// View action history
+		if event.Rune() == 'h' {
+			t.showHistory()
+		}
+
 		return event
 	})
 
@@ -893,4 +903,45 @@ func (t *TUI) showFilterDialog() {
 		AddItem(nil, 0, 1, false)
 
 	t.app.SetRoot(flex, true)
+}
+
+// showHistory displays action history log in a scrollable view
+func (t *TUI) showHistory() {
+	entries, err := actionLogger.ReadHistory()
+	if err != nil {
+		t.showMessage("Error reading history: " + err.Error())
+		return
+	}
+
+	if len(entries) == 0 {
+		t.showMessage("No history yet!")
+		return
+	}
+
+	// Build text from entries
+	text := ""
+	for _, e := range entries {
+		text += fmt.Sprintf("[yellow]%s[-] | [green]%s[-] | %s | %s | %s\n",
+			e.Timestamp, e.Hostname, e.Action, e.Params, e.Result)
+	}
+
+	// Create scrollable text view
+	textView := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText(text).
+		SetScrollable(true)
+
+	textView.SetTitle(" Action History (ESC to close) ").SetBorder(true)
+
+	// Scroll to bottom (latest entries)
+	textView.ScrollToEnd()
+
+	textView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			t.app.SetRoot(t.layout, true)
+		}
+		return event
+	})
+
+	t.app.SetRoot(textView, true)
 }
