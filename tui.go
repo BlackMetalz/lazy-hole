@@ -74,55 +74,8 @@ func (t *TUI) Run() error {
 		})
 	}
 
-	// Keyboard handler - capture keyboard events
-	t.hostList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// If user click escape or 'q' ==> exit app
-		if event.Key() == tcell.KeyEscape || event.Rune() == 'q' {
-			// Check active effects before fucking quit!
-			allEffects := effectTracker.GetAll()
-			if len(allEffects) > 0 {
-				// Count total
-				total := 0
-				for _, effects := range allEffects {
-					total += len(effects)
-				}
-
-				msg := fmt.Sprintf("%d rules still active on %d hosts.\nQuit anyway?", total, len(allEffects))
-				t.showConfirmDialog(msg, func() {
-					t.app.Stop() // If user Yes -> quit
-				})
-			} else {
-				t.app.Stop() // No rule, just quit!
-			}
-		}
-
-		// Story 5.3 - View protected IPs
-		if event.Rune() == 'p' {
-			t.showProtectedIPs()
-		}
-
-		// Story 6.1 - Refresh host
-		if event.Rune() == 'r' {
-			t.refreshHostStatus()
-		}
-
-		// Story 6.2 - Help overlay
-		if event.Rune() == '?' {
-			t.showHelp()
-		}
-
-		// Story 6.3 - Filter host
-		if event.Rune() == '/' {
-			t.showFilterDialog()
-		}
-
-		// Story xx.xx (no idea) - View history
-		if event.Rune() == 'h' {
-			t.showHistory()
-		}
-
-		return event
-	})
+	// Setup keyboard shortcuts for host list (shared with refreshHostList)
+	t.setupHostListKeys()
 
 	// Build layout = hostList + footer
 	t.buildLayout()
@@ -613,50 +566,8 @@ func (t *TUI) refreshHostList() {
 	}
 
 	// Re-add keyboard handler because new list!
-	t.hostList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEscape || event.Rune() == 'q' {
-			// CÙNG LOGIC như Run()!
-			allEffects := effectTracker.GetAll()
-			if len(allEffects) > 0 {
-				total := 0
-				for _, effects := range allEffects {
-					total += len(effects)
-				}
-				msg := fmt.Sprintf("%d rules still active on %d hosts.\nQuit anyway?", total, len(allEffects))
-				t.showConfirmDialog(msg, func() {
-					t.app.Stop()
-				})
-			} else {
-				t.app.Stop()
-			}
-		}
-
-		// Story 5.3 - View protected IPs
-		if event.Rune() == 'p' {
-			t.showProtectedIPs()
-		}
-
-		if event.Rune() == 'r' {
-			t.refreshHostStatus()
-		}
-
-		// Story 6.2 - Help overlay
-		if event.Rune() == '?' {
-			t.showHelp()
-		}
-
-		// Stort 6.3 - Filter host
-		if event.Rune() == '/' {
-			t.showFilterDialog()
-		}
-
-		// View action history
-		if event.Rune() == 'h' {
-			t.showHistory()
-		}
-
-		return event
-	})
+	// Re-apply keyboard shortcuts for new list
+	t.setupHostListKeys()
 
 	// Rebuild layout with new list
 	t.buildLayout()
@@ -807,6 +718,46 @@ func (t *TUI) refreshHostStatus() {
 	t.refreshing = false // Unlock before showMessage
 	msg := fmt.Sprintf("Refreshed! %d/%d hosts connected", connected, len(t.statuses))
 	t.showMessage(msg)
+}
+
+// setupHostListKeys sets all keyboard shortcuts for the host list.
+// Single source of truth! Called by both Run() and refreshHostList()
+func (t *TUI) setupHostListKeys() {
+	t.hostList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape || event.Rune() == 'q' {
+			allEffects := effectTracker.GetAll()
+			if len(allEffects) > 0 {
+				total := 0
+				for _, effects := range allEffects {
+					total += len(effects)
+				}
+				msg := fmt.Sprintf("%d rules still active on %d hosts.\nQuit anyway?", total, len(allEffects))
+				t.showConfirmDialog(msg, func() {
+					t.app.Stop()
+				})
+			} else {
+				t.app.Stop()
+			}
+		}
+
+		if event.Rune() == 'p' {
+			t.showProtectedIPs()
+		}
+		if event.Rune() == 'r' {
+			t.refreshHostStatus()
+		}
+		if event.Rune() == '?' {
+			t.showHelp()
+		}
+		if event.Rune() == '/' {
+			t.showFilterDialog()
+		}
+		if event.Rune() == 'h' {
+			t.showHistory()
+		}
+
+		return event
+	})
 }
 
 // buildLayout creates Flex layout = K9s-style header + hostList

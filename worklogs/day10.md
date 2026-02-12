@@ -66,3 +66,14 @@ actionLogger.Log("hostname-here")
 ```
 
 And yeah, no idea why i'm lazy like this. Vibe code then bro!
+
+Result: 
+![alt text](../images/21.png)
+
+# Little refactor
+After vibe code previous feature, I see problem whenever I add short key, i need to add in both location. Run() and refreshHostList() ==> Refactor that shit!
+
+Good thing to remember (I would forgot it anyway LOL)
+
+fields (data)
+methods (behavior)
