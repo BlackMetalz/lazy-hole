@@ -120,7 +120,7 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Printf("\n⏱️ Total time elapsed for testing all hosts: %s\n", timeElapsed)
+		fmt.Printf("\nTotal time elapsed for testing all hosts: %s\n", timeElapsed)
 
 		// Start TUI when run
 		tui := NewTUI(statuses)
@@ -132,18 +132,20 @@ var rootCmd = &cobra.Command{
 		// fmt.Printf("DEBUG: effects count = %d\n", len(effectTracker.GetAll()))
 
 		// Cleanup after TUI exit (ESC/q)
+		// Use latest statuses from TUI (may have been refreshed!)
+		currentStatuses := tui.GetStatuses()
+
 		if len(effectTracker.GetAll()) > 0 {
 			fmt.Println("\nCleaning up effects...")
-			restoreAll(statuses)
+			restoreAll(currentStatuses)
 		}
 
 		// Close all SSH connections after exit!
-		for _, status := range statuses {
+		for _, status := range currentStatuses {
 			if status.Client != nil {
 				status.Client.Close()
 			}
 		}
-
 	},
 }
 

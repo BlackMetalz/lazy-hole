@@ -121,3 +121,36 @@ iptables -A input -j DROP/Reject only block traffic from Host A --> Host B, but 
 
 # I realized some hotkey doesn't work in group view
 Hmm, seem like issue of `tview` there is no fucking concept middleware or chain handler?. Each widget need it's own handler.
+
+# More bug
+Cleanup doesn't work after refresh. PoC
+```
+cat .lazy-hole/history.log
+2026-02-13T16:35:32+07:00 | mysql-galera-1 | BLACKHOLE ADD | target=192.168.3.11 | SUCCESS
+2026-02-13T16:35:32+07:00 | mysql-galera-1 | BLACKHOLE ADD | target=192.168.3.12 | SUCCESS
+2026-02-13T16:35:32+07:00 | mysql-galera-1 | BLACKHOLE ADD | target=192.168.3.13 | SUCCESS
+2026-02-13T16:35:32+07:00 | mysql-galera-2 | BLACKHOLE ADD | target=192.168.3.11 | SUCCESS
+2026-02-13T16:35:32+07:00 | mysql-galera-2 | BLACKHOLE ADD | target=192.168.3.12 | SUCCESS
+2026-02-13T16:35:32+07:00 | mysql-galera-2 | BLACKHOLE ADD | target=192.168.3.13 | SUCCESS
+2026-02-13T16:35:32+07:00 | mysql-galera-3 | BLACKHOLE ADD | target=192.168.3.11 | SUCCESS
+2026-02-13T16:35:32+07:00 | mysql-galera-3 | BLACKHOLE ADD | target=192.168.3.12 | SUCCESS
+2026-02-13T16:35:32+07:00 | mysql-galera-3 | BLACKHOLE ADD | target=192.168.3.13 | SUCCESS
+2026-02-13T16:43:34+07:00 | mysql-galera-2 | RESTORE HOST | removed all effects | SUCCESS
+2026-02-13T16:43:34+07:00 | mysql-galera-3 | RESTORE HOST | removed all effects | SUCCESS
+2026-02-13T16:43:34+07:00 | mysql-galera-1 | RESTORE HOST | removed all effects | SUCCESS
+```
+
+in root_cmd.go
+```go
+restoreAll(statuses)  // ← use statuses from beginning!
+```
+
+But when user refresh in TUI that used func `refreshHostStatus()`, it calls
+```go
+// Close old client
+s.Client.Close()
+// create new connections
+// Re-connect
+t.statuses = testallHosts(hosts)
+```
+Simple solution: instead use connections old `statuses` , we should use `t.statuses` directly!

@@ -48,6 +48,11 @@ func NewTUI(statuses []HostStatus) *TUI {
 	}
 }
 
+// GetStatuses returns current statuses (may be updated after refresh)
+func (t *TUI) GetStatuses() []HostStatus {
+	return t.statuses
+}
+
 // start the TUI
 // Reflection: can be understand as app.Run()
 func (t *TUI) Run() error {
