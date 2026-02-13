@@ -774,16 +774,50 @@ func (t *TUI) buildLayout() {
 		SetDynamicColors(true).
 		SetText(leftText)
 
-	// MIDDLE = commands in 2 columns
-	headerMid := tview.NewTextView().
+	// MIDDLE = commands in 2 columns using Grid
+	// (-1,-1) = 2 equal columns!
+	headerMid := tview.NewGrid().SetColumns(-1, -1)
+
+	// Need call separated because it will return `*Box`, not `*Grid` so we can not add 2 columns using
+	// headerMid.AddItem below
+	// headerMid.SetBorder(true)
+
+	// We will have max 5 command for each columns!
+
+	leftMidCol := tview.NewTextView().
 		SetDynamicColors(true).
+		SetTextAlign(tview.AlignLeft).
 		SetText(
-			"[aqua](r)[-] Refresh    [aqua](ESC)[-] Back\n" +
-				"[aqua](p)[-] Protected  [aqua](Enter)[-] Select\n" +
-				"[aqua](?)[-] Help       [aqua](q)[-] Quit\n" +
-				"[aqua](/)[-] Filter	 [aqua](u)[-] Undo last rule\n" +
-				"[aqua](h)[-] History applied\n",
+			"[aqua](r)[-]" + " Refresh\n" +
+				"[aqua](p)[-]" + " Protected\n" +
+				"[aqua](?)[-]" + " Help\n" +
+				"[aqua](/)[-]" + " Filter\n" +
+				"[aqua](h)[-]" + " History applied\n",
 		)
+
+	rightMidCol := tview.NewTextView().
+		SetDynamicColors(true).
+		SetTextAlign(tview.AlignLeft).
+		SetText(
+			"[aqua](ESC)[-]" + " Back\n" +
+				"[aqua](Enter)[-]" + " Select\n" +
+				"[aqua](q)[-]" + " Quit\n" +
+				"[aqua](u)[-]" + " Undo last rule\n",
+		)
+
+	headerMid.
+		AddItem(leftMidCol, 0, 0, 1, 1, 0, 0, false).
+		AddItem(rightMidCol, 0, 1, 1, 1, 0, 0, false)
+
+	// headerMid := tview.NewTextView().
+	// 	SetDynamicColors(true).
+	// 	SetText(
+	// 		"[aqua](r)[-] Refresh    [aqua](ESC)[-] Back\n" +
+	// 			"[aqua](p)[-] Protected  [aqua](Enter)[-] Select\n" +
+	// 			"[aqua](?)[-] Help       [aqua](q)[-] Quit\n" +
+	// 			"[aqua](/)[-] Filter	 [aqua](u)[-] Undo last rule\n" +
+	// 			"[aqua](h)[-] History applied\n",
+	// 	)
 
 	// RIGHT = ASCII art logo (block chars)
 	headerRight := tview.NewTextView().
@@ -797,8 +831,9 @@ func (t *TUI) buildLayout() {
 		AddItem(headerRight, 25, 0, false) // Fix 22 chars for logo
 
 	// Main layout = vertical flex
+	// Remember setBorder eaten 2 lines, if we set border for header, we will need add 7 lines to header. Not 5!
 	t.layout = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(header, 5, 0, false).   // Header 5 lines (logo height)
+		AddItem(header, 5, 0, false).   // Header 5 lines (logo height). Each header will have max 5 commands!
 		AddItem(t.hostList, 0, 1, true) // List with focus
 }
 
@@ -807,14 +842,15 @@ func (t *TUI) buildLayout() {
 func (t *TUI) showHelp() {
 	helpText := "Keyboard Shortcuts:\n\n" +
 		"Arrow Keys - Navigate hosts\n" +
-		"Enter - Select host\n" +
-		"Esc - Go back / Quit\n" +
-		"r - Refresh host status\n" +
-		"p - View protected IPs\n" +
-		"/ - Filter hosts\n" +
-		"? - This help\n" +
-		"u - Undo last action\n" +
-		"q - Quit\n\n" +
+		"Enter - Select host\n" + // 2
+		"Esc - Go back / Quit\n" + // 3
+		"r - Refresh host status\n" + // 4
+		"p - View protected IPs\n" + // 5
+		"/ - Filter hosts\n" + // 6
+		"? - This help\n" + // 7
+		"u - Undo last action\n" + // 8
+		"h - History\n" + // 9
+		"q - Quit\n\n" + // 1
 		"Press OK to close."
 
 	modal := tview.NewModal().

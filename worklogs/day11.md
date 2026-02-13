@@ -30,3 +30,18 @@ Summary 3 methods: `Push, Pop, Peek`
 - `Push()`: User add effect success -> add action into stack
 - `Peek()`: When user hit `u`, Look at `UndoAction` struct but not delete, for display pop up, "Undo this"?
 - `Pop()`: User confirm yes -> remove last action from stack --> return it --> call removeSingleEffect() with it.
+
+# Update UI
+Last header was ugly, I need to update it. Here is the result
+
+![alt text](../images/22.png)
+
+New lession learned. SetBorder(true) will eat 2 lines.
+Both column use this method `SetTextAlign(tview.AlignLeft)`, it will append. You can imagine by this
+```
+COLUMN1 COLUMN2 =====spacehere========
+```
+
+if i set 1 column AlightLeft and 1 Alight Right
+
+![alt text](../images/23.png)
