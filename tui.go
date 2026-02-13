@@ -141,8 +141,8 @@ func (t *TUI) formatHostLabel(status HostStatus) string {
 			effectStr += fmt.Sprintf(" (Latency:%s %s)", e.Value, e.Target)
 		case EffectPacketLoss:
 			effectStr += fmt.Sprintf(" (PacketLoss:%s%% %s)", e.Value, e.Target)
-		case EffectPartition:
-			effectStr += fmt.Sprintf(" (Partition:%s)", e.Target)
+		// case EffectPartition:
+		// 	effectStr += fmt.Sprintf(" (Partition:%s)", e.Target)
 		case EffectPortBlock:
 			effectStr += fmt.Sprintf(" (PortBlock:%s:%s)", e.Target, e.Value)
 		}

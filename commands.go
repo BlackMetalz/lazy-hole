@@ -239,6 +239,7 @@ func addPacketLoss(client *ssh.Client, hostname, iface, percent string) error {
 }
 
 // Block incomming traffic from source IP (network partition)
+/*
 func addPartition(client *ssh.Client, hostname, sourceIP string) error {
 	if net.ParseIP(sourceIP) == nil {
 		return fmt.Errorf("invalid IP: %s", sourceIP)
@@ -303,6 +304,7 @@ func removePartition(client *ssh.Client, hostname, sourceIP string) error {
 
 	return nil
 }
+*/
 
 // Block specific port from source IP
 func addPortBlock(client *ssh.Client, hostname, sourceIP, port string) error {
@@ -378,8 +380,8 @@ func restoreHost(client *ssh.Client, hostname string) error {
 			err = removeBlackHole(client, hostname, effect.Target)
 		case EffectLatency, EffectPacketLoss:
 			err = removeTCRules(client, hostname, effect.Target)
-		case EffectPartition:
-			err = removePartition(client, hostname, effect.Target)
+		// case EffectPartition:
+		// 	err = removePartition(client, hostname, effect.Target)
 		case EffectPortBlock:
 			err = removePortBlock(client, hostname, effect.Target, effect.Value)
 		}
@@ -445,8 +447,8 @@ func removeSingleEffect(client *ssh.Client, hostname string, effect ActiveEffect
 		cmd = fmt.Sprintf("sudo tc qdisc del dev %s root", effect.Target)
 	case EffectPacketLoss:
 		cmd = fmt.Sprintf("sudo tc qdisc del dev %s root", effect.Target)
-	case EffectPartition:
-		cmd = fmt.Sprintf("sudo iptables -D INPUT -s %s -j DROP", effect.Target)
+	// case EffectPartition:
+	// 	cmd = fmt.Sprintf("sudo iptables -D INPUT -s %s -j DROP", effect.Target)
 	case EffectPortBlock:
 		cmd = fmt.Sprintf("sudo iptables -D INPUT -s %s -p tcp --dport %s -j DROP", effect.Target, effect.Value)
 	}

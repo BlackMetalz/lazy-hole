@@ -14,8 +14,8 @@ const (
 	EffectBlackHole  = "blackhole"
 	EffectLatency    = "latency"
 	EffectPacketLoss = "packetloss"
-	EffectPartition  = "partition"
-	EffectPortBlock  = "portblock"
+	// EffectPartition  = "partition"
+	EffectPortBlock = "portblock"
 )
 
 // ActiveEffect represents one active effect on a host

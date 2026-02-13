@@ -114,3 +114,7 @@ holy fucking shiet, time to refactor, simple create new file and move function t
 
 `tui_overlays.go` Popups/dialogs: showHelp, showFilterDialog, showHistory, showUndoConfirm, showProtectedIPs
 
+# Remove iptables partition.
+removed because blackhole covers most cases.
+ip route blackhole block both input/output
+iptables -A input -j DROP/Reject only block traffic from Host A --> Host B, but host B traffics still allowed to host A from what I understand.

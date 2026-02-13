@@ -50,9 +50,9 @@ func (t *TUI) showActionMenu(status HostStatus) {
 	actionList.AddItem("Packet Loss", "Drop random packets", 'p', func() {
 		t.showInputForm(status, "packetloss")
 	})
-	actionList.AddItem("IPtables Partition", "Block source IP", 'i', func() {
-		t.showInputForm(status, "partition")
-	})
+	// actionList.AddItem("IPtables Partition", "Block source IP", 'i', func() {
+	// 	t.showInputForm(status, "partition")
+	// })
 
 	actionList.AddItem("Port Block", "Block specific port from IP (Layer 4)", 'd', func() {
 		t.showInputForm(status, "portblock")
@@ -245,70 +245,72 @@ func (t *TUI) showInputForm(status HostStatus, actionType string) {
 			})
 		}
 
-	case "partition":
-		form.SetTitle(" Partition - " + status.Host.Name + " ")
-		// Feb 12, 2026. I added feature to support multiple ip for network partition
-		// Support comma-separated IPs, e.g. 192.168.3.11,192.168.13.11
-		form.AddInputField("Source IP to block (comma-separated):", "", 50, nil, nil)
-		form.AddButton("Apply", func() {
-			input := form.GetFormItem(0).(*tview.InputField).GetText()
+		/*
+			case "partition":
+				form.SetTitle(" Partition - " + status.Host.Name + " ")
+				// Feb 12, 2026. I added feature to support multiple ip for network partition
+				// Support comma-separated IPs, e.g. 192.168.3.11,192.168.13.11
+				form.AddInputField("Source IP to block (comma-separated):", "", 50, nil, nil)
+				form.AddButton("Apply", func() {
+					input := form.GetFormItem(0).(*tview.InputField).GetText()
 
-			// Split by comma and trim whitespace
-			parts := strings.Split(input, ",")
-			var targets []string
-			for _, p := range parts {
-				// if trimmed is not empty, append to target lists
-				trimmed := strings.TrimSpace(p)
-				if trimmed != "" {
-					targets = append(targets, trimmed)
-				}
-			}
-
-			// Count
-			if len(targets) == 0 {
-				t.showMessage("Error: no valid targets provided")
-				return
-			}
-
-			// Check self-lock for any of the targets
-			hasSelfLock := false
-			for _, target := range targets {
-				if status.SSH_SourceIP == target {
-					hasSelfLock = true
-					break
-				}
-			}
-
-			// Func that actually applies all blackholes and shows summary
-			// Apply for each target, if getting error, append to errors slice!
-			applyAll := func() {
-				success := 0
-				var errors []string
-				for _, target := range targets {
-					err := addPartition(status.Client, status.Host.Name, target)
-					if err != nil {
-						errors = append(errors, target+": "+err.Error())
-					} else {
-						success++
+					// Split by comma and trim whitespace
+					parts := strings.Split(input, ",")
+					var targets []string
+					for _, p := range parts {
+						// if trimmed is not empty, append to target lists
+						trimmed := strings.TrimSpace(p)
+						if trimmed != "" {
+							targets = append(targets, trimmed)
+						}
 					}
-				}
 
-				// Build summary message
-				msg := fmt.Sprintf("Partition: %d/%d added", success, len(targets))
-				if len(errors) > 0 {
-					msg += "\n\nFailed:\n" + strings.Join(errors, "\n")
-				}
-				t.showMessage(msg)
-			}
+					// Count
+					if len(targets) == 0 {
+						t.showMessage("Error: no valid targets provided")
+						return
+					}
 
-			// Check self lock, prevent partition yourself LOL
-			if hasSelfLock {
-				// Show confirm dialog take 2 param, if yes applyAll!
-				t.showConfirmDialog("WARNING: One of the targets is your SSH source IP!\nAre you sure?", applyAll)
-			} else {
-				applyAll()
-			}
-		})
+					// Check self-lock for any of the targets
+					hasSelfLock := false
+					for _, target := range targets {
+						if status.SSH_SourceIP == target {
+							hasSelfLock = true
+							break
+						}
+					}
+
+					// Func that actually applies all blackholes and shows summary
+					// Apply for each target, if getting error, append to errors slice!
+					applyAll := func() {
+						success := 0
+						var errors []string
+						for _, target := range targets {
+							err := addPartition(status.Client, status.Host.Name, target)
+							if err != nil {
+								errors = append(errors, target+": "+err.Error())
+							} else {
+								success++
+							}
+						}
+
+						// Build summary message
+						msg := fmt.Sprintf("Partition: %d/%d added", success, len(targets))
+						if len(errors) > 0 {
+							msg += "\n\nFailed:\n" + strings.Join(errors, "\n")
+						}
+						t.showMessage(msg)
+					}
+
+					// Check self lock, prevent partition yourself LOL
+					if hasSelfLock {
+						// Show confirm dialog take 2 param, if yes applyAll!
+						t.showConfirmDialog("WARNING: One of the targets is your SSH source IP!\nAre you sure?", applyAll)
+					} else {
+						applyAll()
+					}
+				})
+		*/
 
 	case "portblock":
 		form.SetTitle(" Port Block - " + status.Host.Name + " ")
