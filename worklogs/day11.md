@@ -45,3 +45,60 @@ COLUMN1 COLUMN2 =====spacehere========
 if i set 1 column AlightLeft and 1 Alight Right
 
 ![alt text](../images/23.png)
+
+# Time to resolve pain point after little usage
+- I have to repeat action add blackhole 3 times! (for 3 hosts)
+- I need to grouping hosts into 1 group, and apply action for all hosts in that group!
+- And right now, I don't have that much host to test (lower than 10 hosts). So there is no scenario like 1 host belong to multiple group. So this will be config format
+```yaml
+hosts:
+  - name: mysql-node-1
+    ip: 10.0.0.1
+    group: galera
+```
+
+In future if I need that feature, config will be
+```yaml
+hosts:
+  - name: mysql-node-1
+    ip: 10.0.0.1
+    ssh_user: kienlt
+  - name: mysql-node-2
+    ip: 10.0.0.2
+    ssh_user: kienlt
+  - name: redis-1
+    ip: 10.0.0.3
+    ssh_user: kienlt
+groups:                    # NEW - optional section
+  galera:
+    - mysql-node-1
+    - mysql-node-2
+  redis:
+    - redis-1
+```
+
+So shortkey will be `g` for switch to group view and `l` for host lists view!
+
+And yeah, a lot of fucking thing to do to implement this shit!
+
+First we need to update our TUI struct for sure. `viewMode` for switch, `groupList *tview.List` for group view
+
+We need to buildGroupList() also, collect groups from statuses, build list widget!
+
+update `buildLayout()` to include group list and switch between group/host view!
+
+`switchToGroupView()` : set mode + build + display
+
+`showGroupActionMenu()`: menu actions for group (like `showActionMenu()` for hosts)
+
+`showGroupInputForm()`: form to enter params by action type
+
+`applyGroupAction()`: loop hosts, skip bad ones, apply and show summary!
+
+And seem like little duplicate, but merge them would caused a lot of fucking `if isGroup` conditions. Hard to read hard to maintain, right? So this is trade off and I choosed it.
+
+DRY is great but wrong abstraction worse more than duplication.
+
+Ok new issue, after i'm typing one by one line. I see issue that "blackhole", "partition" are not support multiple ip separated by comma.
+
+Ok, as we know network partition is not needed and duplicate as far as I know. So we can remove it? no just comment it xD

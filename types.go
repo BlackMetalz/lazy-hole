@@ -8,6 +8,7 @@ type Host struct {
 	User     string `yaml:"ssh_user"`
 	SSH_Port int    `yaml:"ssh_port"`
 	SSH_Key  string `yaml:"ssh_key"`
+	Group    string `yaml:"group,omitempty"`
 }
 
 // wrapper struct for config file

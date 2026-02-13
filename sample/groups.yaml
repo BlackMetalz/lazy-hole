@@ -5,6 +5,20 @@ hosts:
     ssh_user: kienlt        # SSH username
     # ssh_port: 22            # Optional, default 22
     ssh_key: ~/.ssh/id_rsa  # Optional, default use ssh-agent / ~/.ssh/id_rsa
+    group: mysql-db
   - name: mysql-node-2
     ip: 10.0.0.6
     ssh_user: kienlt
+    group: mysql-db
+  - name: k8s-node-1
+    ip: 10.0.0.1
+    ssh_user: kienlt
+    group: k8s
+  - name: k8s-node-2
+    ip: 10.0.0.2
+    ssh_user: kienlt
+    group: k8s
+  - name: k8s-node-3
+    ip: 10.0.0.3
+    ssh_user: kienlt
+    group: k8s
