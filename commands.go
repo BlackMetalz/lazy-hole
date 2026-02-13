@@ -54,6 +54,7 @@ func addBlackHole(client *ssh.Client, hostname, target string) error {
 			Target: target,
 			Value:  "", // Blackhole doesn't require value.
 		})
+		undoStack.Push(UndoAction{Hostname: hostname, Effect: ActiveEffect{Type: EffectBlackHole, Target: target}, Client: client})
 
 		actionLogger.Log(hostname, "BLACKHOLE ADD", "target="+target, "SUCCESS")
 	}
@@ -165,6 +166,7 @@ func addLatency(client *ssh.Client, hostname, iface, delay string) error {
 			Target: iface,
 			Value:  delay,
 		})
+		undoStack.Push(UndoAction{Hostname: hostname, Effect: ActiveEffect{Type: EffectLatency, Target: iface, Value: delay}, Client: client})
 		actionLogger.Log(hostname, "LATENCY ADD", "iface="+iface+" delay="+delay, "SUCCESS")
 	}
 
@@ -229,6 +231,7 @@ func addPacketLoss(client *ssh.Client, hostname, iface, percent string) error {
 			Target: iface,
 			Value:  percent,
 		})
+		undoStack.Push(UndoAction{Hostname: hostname, Effect: ActiveEffect{Type: EffectPacketLoss, Target: iface, Value: percent}, Client: client})
 		actionLogger.Log(hostname, "PACKETLOSS ADD", "iface="+iface+" loss="+percent, "SUCCESS")
 	}
 
@@ -263,6 +266,7 @@ func addPartition(client *ssh.Client, hostname, sourceIP string) error {
 			Target: sourceIP,
 			Value:  "",
 		})
+		undoStack.Push(UndoAction{Hostname: hostname, Effect: ActiveEffect{Type: EffectPartition, Target: sourceIP}, Client: client})
 		actionLogger.Log(hostname, "PARTITION ADD", "source="+sourceIP, "SUCCESS")
 	}
 
@@ -328,6 +332,7 @@ func addPortBlock(client *ssh.Client, hostname, sourceIP, port string) error {
 			Target: sourceIP,
 			Value:  port,
 		})
+		undoStack.Push(UndoAction{Hostname: hostname, Effect: ActiveEffect{Type: EffectPortBlock, Target: sourceIP, Value: port}, Client: client})
 		actionLogger.Log(hostname, "PORTBLOCK ADD", "source="+sourceIP+" port="+port, "SUCCESS")
 	}
 

@@ -755,6 +755,9 @@ func (t *TUI) setupHostListKeys() {
 		if event.Rune() == 'h' {
 			t.showHistory()
 		}
+		if event.Rune() == 'u' {
+			t.showUndoConfirm()
+		}
 
 		return event
 	})
@@ -778,7 +781,8 @@ func (t *TUI) buildLayout() {
 			"[aqua](r)[-] Refresh    [aqua](ESC)[-] Back\n" +
 				"[aqua](p)[-] Protected  [aqua](Enter)[-] Select\n" +
 				"[aqua](?)[-] Help       [aqua](q)[-] Quit\n" +
-				"[aqua](/)[-] Filter",
+				"[aqua](/)[-] Filter	 [aqua](u)[-] Undo last rule\n" +
+				"[aqua](h)[-] History applied\n",
 		)
 
 	// RIGHT = ASCII art logo (block chars)
@@ -809,6 +813,7 @@ func (t *TUI) showHelp() {
 		"p - View protected IPs\n" +
 		"/ - Filter hosts\n" +
 		"? - This help\n" +
+		"u - Undo last action\n" +
 		"q - Quit\n\n" +
 		"Press OK to close."
 
@@ -820,6 +825,39 @@ func (t *TUI) showHelp() {
 		})
 
 	t.app.SetRoot(modal, true)
+}
+
+// showUndoConfirm shows what will be undone and asks for confirmation
+func (t *TUI) showUndoConfirm() {
+	action := undoStack.Peek()
+	if action == nil {
+		t.showMessage("Nothing to undo!")
+		return
+	}
+
+	// Build description of what will be undone
+	desc := fmt.Sprintf("Undo: %s %s", action.Effect.Type, action.Effect.Target)
+	if action.Effect.Value != "" {
+		desc += " (" + action.Effect.Value + ")"
+	}
+	desc += " on " + action.Hostname + "?"
+
+	t.showConfirmDialog(desc, func() {
+		// Pop from stack and execute undo
+		undone := undoStack.Pop()
+		if undone == nil {
+			t.showMessage("Nothing to undo!")
+			return
+		}
+
+		err := removeSingleEffect(undone.Client, undone.Hostname, undone.Effect)
+		if err != nil {
+			t.showMessage("Undo failed: " + err.Error())
+		} else {
+			actionLogger.Log(undone.Hostname, "UNDO", undone.Effect.Type+" "+undone.Effect.Target, "SUCCESS")
+			t.showMessage("Undone: " + undone.Effect.Type + " " + undone.Effect.Target + " on " + undone.Hostname)
+		}
+	})
 }
 
 // showFilterDialog displays popup for user to type filter text

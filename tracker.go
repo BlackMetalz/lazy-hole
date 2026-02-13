@@ -1,6 +1,10 @@
 package main
 
-import "sync"
+import (
+	"sync"
+
+	"golang.org/x/crypto/ssh"
+)
 
 // Global tracker instance
 var effectTracker = NewEffectTracker() // Global variable, accessible from anywhere
@@ -82,4 +86,53 @@ func (t *EffectTracker) Clear(hostname string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	delete(t.effects, hostname)
+}
+
+// ============================================================
+// Undo Stack - session-scoped, only tracks add actions
+// ============================================================
+
+// UndoAction represents one undoable action
+type UndoAction struct {
+	Hostname string
+	Effect   ActiveEffect // Type+Target+Value → enough to call removeSingleEffect
+	Client   *ssh.Client
+}
+
+// Global undo stack
+var undoStack = &UndoStack{}
+
+// UndoStack manages undo actions with mutex for thread safety
+type UndoStack struct {
+	mu      sync.Mutex
+	actions []UndoAction
+}
+
+// Push adds an action to the undo stack
+func (s *UndoStack) Push(action UndoAction) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.actions = append(s.actions, action)
+}
+
+// Pop removes and returns the last action, returns nil if empty
+func (s *UndoStack) Pop() *UndoAction {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.actions) == 0 {
+		return nil
+	}
+	last := s.actions[len(s.actions)-1]
+	s.actions = s.actions[:len(s.actions)-1]
+	return &last
+}
+
+// Peek returns the last action without removing it, returns nil if empty
+func (s *UndoStack) Peek() *UndoAction {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.actions) == 0 {
+		return nil
+	}
+	return &s.actions[len(s.actions)-1]
 }
