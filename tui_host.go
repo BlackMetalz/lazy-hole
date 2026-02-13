@@ -39,8 +39,12 @@ func (t *TUI) showActionMenu(status HostStatus) {
 	}
 
 	// Add action options
-	actionList.AddItem("Blackhole", "Drop traffic to IP/CIDR (Layer 3)", 'b', func() {
+	actionList.AddItem("Blackhole", "Drop traffic to IP/CIDR (manual input)", 'b', func() {
 		t.showInputForm(status, "blackhole")
+	})
+
+	actionList.AddItem("Blackhole by Group", "Block all IPs of a group", 'B', func() {
+		t.showHostBlackholeByGroup(status)
 	})
 
 	actionList.AddItem("Latency", "Add network delay", 'l', func() {
@@ -520,4 +524,79 @@ func (t *TUI) showRestoreMenu(status HostStatus) {
 
 	// Set root.
 	t.app.SetRoot(restoreList, true)
+}
+
+// showHostBlackholeByGroup shows list of groups to blackhole on a SINGLE host
+func (t *TUI) showHostBlackholeByGroup(status HostStatus) {
+	// Collect all groups and their IPs
+	// map[groupName] => []IP
+	groupIPs := make(map[string][]string)
+	for _, s := range t.statuses {
+		if s.Host.Group != "" {
+			groupIPs[s.Host.Group] = append(groupIPs[s.Host.Group], s.Host.IP)
+		}
+	}
+
+	if len(groupIPs) == 0 {
+		t.showMessage("No groups found!")
+		return
+	}
+
+	list := tview.NewList()
+	list.SetTitle(" Blackhole by Group - " + status.Host.Name + " ").SetBorder(true)
+
+	idx := 0
+	for targetGroup, ips := range groupIPs {
+		label := fmt.Sprintf("%s (%d IPs: %s)", targetGroup, len(ips), strings.Join(ips, ", "))
+		var shortcut rune
+		if idx < 9 {
+			shortcut = rune('1' + idx)
+		} else {
+			shortcut = 0
+		}
+
+		targetIPs := strings.Join(ips, ",")
+		targetName := targetGroup
+
+		list.AddItem(label, "", shortcut, func() {
+			msg := fmt.Sprintf("Blackhole all IPs of group <%s> on <%s>?\nIPs: %s", targetName, status.Host.Name, targetIPs)
+			t.showConfirmDialog(msg, func() {
+				// Apply blackhole for each IP
+				targets := strings.Split(targetIPs, ",")
+				success := 0
+				var errors []string
+				for _, target := range targets {
+					trimmed := strings.TrimSpace(target)
+					if trimmed == "" {
+						continue
+					}
+					err := addBlackHole(status.Client, status.Host.Name, trimmed)
+					if err != nil {
+						errors = append(errors, trimmed+": "+err.Error())
+					} else {
+						success++
+					}
+				}
+				msg := fmt.Sprintf("Blackhole on %s: %d/%d added", status.Host.Name, success, len(targets))
+				if len(errors) > 0 {
+					msg += "\n\nFailed:\n" + strings.Join(errors, "\n")
+				}
+				t.showMessage(msg)
+			})
+		})
+		idx++
+	}
+
+	list.AddItem("Back", "", 0, func() {
+		t.showActionMenu(status)
+	})
+
+	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			t.showActionMenu(status)
+		}
+		return event
+	})
+
+	t.app.SetRoot(list, true)
 }

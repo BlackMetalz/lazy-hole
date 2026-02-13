@@ -156,7 +156,7 @@ t.statuses = testallHosts(hosts)
 Simple solution: instead use connections old `statuses` , we should use `t.statuses` directly!
 
 # Today is productive day. LOL
-Implement blackhole by group:
+Implement group blackhole by group:
 Goal: i have 2 group k8s and mysql-db. I want blackhole all mysql-db to group k8s or single host can block whole group also!
 
 group k8s --> action menu:
@@ -164,3 +164,5 @@ group k8s --> action menu:
   blackhole by group (select group) <-- New
 
 And yeah, remember that shit: in `tview` `[%s]` will not work! You need to change or escape it. I choosed change to `<%s>`
+
+We need to the same for group blackhole by single host!
