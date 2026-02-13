@@ -16,7 +16,7 @@ Run on jump host → SSH to target hosts → Execute network commands remotely
 - **Blackhole routing** — Drop all traffic to specific IP/CIDR (ip route blackhole). Simulates DNS/routing failure, network down!
 - **Latency injection** — Add delay to network interfaces (tc qdisc)
 - **Packet loss** — Simulate unreliable network (tc qdisc)
-- **Network partition** — Block traffic from specific source IPs (iptables). Simulates firewall misconfiguration!
+- ~~**Network partition** — Block traffic from specific source IPs (iptables). Simulates firewall misconfiguration!~~ (Removed)
 - **Port blocking** — Block specific port from source IP (iptables)
 - **Auto-restore** — Cleanup all effects on exit (Ctrl+C safe)
 - **K9s-style TUI** — Interactive terminal UI with keyboard shortcuts (Motivation: I love k9s)
@@ -72,13 +72,30 @@ hosts:
 lazy-hole -c /path/to/hosts.yaml
 ```
 
-## Keyboard Shortcut
+## Keyboard Shortcuts
+
+### Host View (default)
 
 | Key | Action |
 |-----|--------|
 | `Enter` | Open action menu for selected host |
-| `/` | Filter hosts |
 | `r` | Refresh host status |
-| `p` | Show protected IPs |
+| `/` | Filter hosts by name |
+| `p` | Show protected IPs (SSH source) |
+| `u` | Undo last action |
+| `h` | View action history |
+| `g` | Switch to group view |
 | `?` | Show help |
 | `Esc`/`q` | Quit (auto-restore effects) |
+
+### Group View
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Open action menu for selected group |
+| `l`/`Esc` | Switch back to host view |
+| `u` | Undo last action |
+| `h` | View action history |
+| `/` | Filter hosts |
+| `?` | Show help |
+| `q` | Quit |
