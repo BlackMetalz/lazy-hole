@@ -118,3 +118,6 @@ holy fucking shiet, time to refactor, simple create new file and move function t
 removed because blackhole covers most cases.
 ip route blackhole block both input/output
 iptables -A input -j DROP/Reject only block traffic from Host A --> Host B, but host B traffics still allowed to host A from what I understand.
+
+# I realized some hotkey doesn't work in group view
+Hmm, seem like issue of `tview` there is no fucking concept middleware or chain handler?. Each widget need it's own handler.

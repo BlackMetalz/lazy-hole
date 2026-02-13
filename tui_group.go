@@ -46,15 +46,29 @@ func (t *TUI) buildGroupList() {
 
 	// ESC = back to hosts. Specific handler
 	// Ughhh, I hate this, need to refactor this?? Tired of typing/copying SetInputCapture...
+	// Group-specific + common shortkeys (no middleware in tview, must duplicate)
 	t.groupList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// Group-specific keys
 		if event.Key() == tcell.KeyEscape || event.Rune() == 'l' {
 			t.viewMode = "hosts"
 			t.refreshHostList()
 			t.app.SetRoot(t.layout, true)
 		}
-		// Add here to quit also
+		// Common keys (same as setupHostListKeys)
 		if event.Rune() == 'q' {
 			t.app.Stop()
+		}
+		if event.Rune() == 'h' {
+			t.showHistory()
+		}
+		if event.Rune() == 'u' {
+			t.showUndoConfirm()
+		}
+		if event.Rune() == '?' {
+			t.showHelp()
+		}
+		if event.Rune() == '/' {
+			t.showFilterDialog()
 		}
 		return event
 	})
