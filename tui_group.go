@@ -52,6 +52,10 @@ func (t *TUI) buildGroupList() {
 			t.refreshHostList()
 			t.app.SetRoot(t.layout, true)
 		}
+		// Add here to quit also
+		if event.Rune() == 'q' {
+			t.app.Stop()
+		}
 		return event
 	})
 }
@@ -88,6 +92,10 @@ func (t *TUI) showGroupActionMenu(groupName string, members []string) {
 	actionList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
 			t.switchToGroupView()
+		}
+		// Add q to quit in group view!
+		if event.Rune() == 'q' {
+			t.app.Stop()
 		}
 		return event
 	})
