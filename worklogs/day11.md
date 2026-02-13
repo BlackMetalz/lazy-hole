@@ -102,3 +102,15 @@ DRY is great but wrong abstraction worse more than duplication.
 Ok new issue, after i'm typing one by one line. I see issue that "blackhole", "partition" are not support multiple ip separated by comma.
 
 Ok, as we know network partition is not needed and duplicate as far as I know. So we can remove it? no just comment it xD
+
+# Refactor time for tui.go
+holy fucking shiet, time to refactor, simple create new file and move function to there, since they are all in main package, no problem at all!!!
+
+`tui.go` Core: TUI struct, NewTUI, Run, buildLayout, setupHostListKeys, formatHostLabel, showMessage, showConfirmDialog
+
+`tui_host.go` Host view: showActionMenu, showInputForm, refreshHostList, refreshHostStatus, showRestoreMenu
+
+`tui_group.go` Group view: buildGroupList, switchToGroupView, showGroupActionMenu, showGroupInputForm, applyGroupAction
+
+`tui_overlays.go` Popups/dialogs: showHelp, showFilterDialog, showHistory, showUndoConfirm, showProtectedIPs
+
