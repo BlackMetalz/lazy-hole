@@ -88,8 +88,11 @@ func (t *TUI) showGroupActionMenu(groupName string, members []string) {
 	actionList := tview.NewList()
 	actionList.SetTitle(" Actions for group: " + groupName + "").SetBorder(true)
 
-	actionList.AddItem("Blackhole", "Drop traffic to IP/CIDR", 'b', func() {
+	actionList.AddItem("Blackhole", "Drop traffic to IP/CIDR (manual input)", 'b', func() {
 		t.showGroupInputForm(groupName, members, "blackhole")
+	})
+	actionList.AddItem("Blackhole by Group", "Block all IPs of another group", 'B', func() {
+		t.showGroupBlackholeByGroup(groupName, members)
 	})
 	actionList.AddItem("Latency", "Add network delay", 'l', func() {
 		t.showGroupInputForm(groupName, members, "latency")
@@ -239,4 +242,63 @@ func (t *TUI) applyGroupAction(groupName string, members []string, actionType, t
 		msg += "\n\nFailed:\n" + strings.Join(errors, "\n")
 	}
 	t.showMessage(msg)
+}
+
+// showGroupBlackholeByGroup shows a list of OTHER groups to blackhole
+// Collects all IPs from selected target group, then applies blackhole on all hosts in current group
+func (t *TUI) showGroupBlackholeByGroup(groupName string, members []string) {
+	// Collect all groups and their IPs (exclude current group)
+	// map[groupName] => []IP
+	groupIPs := make(map[string][]string)
+	for _, s := range t.statuses {
+		if s.Host.Group != "" && s.Host.Group != groupName {
+			groupIPs[s.Host.Group] = append(groupIPs[s.Host.Group], s.Host.IP)
+		}
+	}
+
+	if len(groupIPs) == 0 {
+		t.showMessage("No other groups found!")
+		return
+	}
+
+	// Build list of target groups
+	list := tview.NewList()
+	list.SetTitle(" Blackhole by Group - from: " + groupName + " ").SetBorder(true)
+
+	idx := 0
+	for targetGroup, ips := range groupIPs {
+		label := fmt.Sprintf("%s (%d IPs: %s)", targetGroup, len(ips), strings.Join(ips, ", "))
+		var shortcut rune
+		if idx < 9 {
+			shortcut = rune('1' + idx)
+		} else {
+			shortcut = 0
+		}
+
+		// Capture for closure
+		targetIPs := strings.Join(ips, ",")
+		targetName := targetGroup
+
+		list.AddItem(label, "", shortcut, func() {
+			// Confirm before applying
+			msg := fmt.Sprintf("Blackhole all IPs of group <%s> on all hosts in group <%s>?\nIPs: %s", targetName, groupName, targetIPs)
+			t.showConfirmDialog(msg, func() {
+				t.applyGroupAction(groupName, members, "blackhole", targetIPs, "")
+			})
+		})
+		idx++
+	}
+
+	list.AddItem("Back", "", 0, func() {
+		t.showGroupActionMenu(groupName, members)
+	})
+
+	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			t.showGroupActionMenu(groupName, members)
+		}
+		return event
+	})
+
+	t.app.SetRoot(list, true)
 }
