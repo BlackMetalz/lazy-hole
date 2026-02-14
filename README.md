@@ -55,19 +55,9 @@ lazy-hole -v
 
 ## Usage
 
-### 1. Create config file
-```yaml
-hosts:
-  - name: mysql-node-1
-    ip: 10.0.0.5
-    ssh_user: kienlt
-    ssh_key: ~/.ssh/id_rsa
-  - name: mysql-node-2
-    ip: 10.0.0.6
-    ssh_user: kienlt
-```
+See the full [Usage Guide](USAGE.md) for detailed instructions with screenshots.
 
-### 2. Run
+### Quick Start
 ```bash
 lazy-hole -c /path/to/hosts.yaml
 ```
