@@ -17,6 +17,17 @@ func LoadConfig(path string) (*Config, error) {
 
 	// initialize config
 	// &, yes, it is pointer
+	// Right now, in our business, we don't have to modify our config file after we load it.
+	// So why we need to pointer here?
+	// 1. yaml.Unmarshal required pointer to write data into it
+	// 2. LoadConfig returns *Config, so declaring as pointer from the start is convenient
+	// We can init like this, but current way is more like Go idiom xDD
+	/*
+		var config Config
+		err = yaml.Unmarshal(file, &config)
+		// ...
+		return &config, nil
+	*/
 	config := &Config{}
 
 	// unmarshal yaml
