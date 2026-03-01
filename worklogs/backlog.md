@@ -1,9 +1,8 @@
 # TODO: Missing feature persist effects
 It can be persist effects to file. Not decided yet. Maybe v3 xDD
 
-# TODO: Add fuzzy search for select host
-In scenario there is more than 9 hosts, we can not have enough shortkey for them!
-
-Make them work like search in K9S
-
 # Make host list order is persistent, follow order in config!
+Feb 27, 2026: Yes, i see this is fucing annoying.
+
+# Group view missing active rule applied
+Feb 27, 2026: yes, while using I see that fucking missing!

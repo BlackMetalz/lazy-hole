@@ -1,7 +1,7 @@
 # Overview
 
 ## What is Lazy Hole?
-A CLI/TUI tool to simulate network failures for testing distributed systems (like MySQL Galera cluster). Instead of remembering complex `tc qdisc`, `iptables` and `ip route` commands, you use an interactive interface.
+A CLI/TUI tool to simulate network failures (Network Chaos CLI) for testing distributed systems (like MySQL Galera cluster). Instead of remembering complex `tc qdisc`, `iptables` and `ip route` commands, you use an interactive interface.
 
 ## Motivation to build this trash?
 - Testing: How does your app behave when network fails?

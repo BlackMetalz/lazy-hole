@@ -218,7 +218,6 @@ func main() {
 				Value:  "8%",
 			},
 		},
-
 		"api-03": {
 			{
 				Type:   "blackhole",
@@ -285,8 +284,8 @@ Let's breakdown:
 
 Ex:
 ```
-Before: [A, B, C, D, E]  (remove C at index 2)
-[:2]  = [A, B]
-[3:]  = [D, E]
-After = [A, B, D, E]
+Before: s := []string{"A", "B", "C", "D", "E"}  (remove C at index 2)
+s[:2]  = ["A", "B"]
+s[3:]  = ["D", "E"]
+After = append(s[:2], s[3:]...) = ["A", "B", "D", "E"]
 ```

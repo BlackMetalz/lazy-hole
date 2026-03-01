@@ -61,7 +61,7 @@ in root_cmd.go, we have define for that close
 ```
 
 After comment it
-![alt text](../images/06.png.png).
+![alt text](../images/06.png).
 
 And show other form we just added
 
