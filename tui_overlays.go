@@ -121,23 +121,45 @@ func (t *TUI) showUndoConfirm() {
 	if action.Effect.Value != "" {
 		desc += " (" + action.Effect.Value + ")"
 	}
-	desc += " on " + action.Hostname + "?"
+	desc += " on " + action.Hostname
+	if action.BatchID != "" {
+		desc += " (batch/group action)"
+	}
+	desc += "?"
 
 	t.showConfirmDialog(desc, func() {
-		// Pop from stack and execute undo
-		undone := undoStack.Pop()
-		if undone == nil {
+		// PopBatch: if batch → pop all with same BatchID, else pop 1
+		batch := undoStack.PopBatch()
+		if len(batch) == 0 {
 			t.showMessage("Nothing to undo!")
 			return
 		}
 
-		err := removeSingleEffect(undone.Client, undone.Hostname, undone.Effect)
-		if err != nil {
-			t.showMessage("Undo failed: " + err.Error())
-		} else {
-			actionLogger.Log(undone.Hostname, "UNDO", undone.Effect.Type+" "+undone.Effect.Target, "SUCCESS")
-			t.showMessage("Undone: " + undone.Effect.Type + " " + undone.Effect.Target + " on " + undone.Hostname)
+		succeeded := 0
+		failed := 0
+		for _, undone := range batch {
+			err := removeSingleEffect(undone.Client, undone.Hostname, undone.Effect)
+			if err != nil {
+				failed++
+			} else {
+				actionLogger.Log(undone.Hostname, "UNDO", undone.Effect.Type+" "+undone.Effect.Target, "SUCCESS")
+				succeeded++
+			}
 		}
+
+		// Refresh current view so stale data is gone!
+		if t.viewMode == "groups" {
+			t.buildGroupList()
+			t.buildLayout()
+		} else {
+			t.refreshHostList()
+		}
+
+		msg := fmt.Sprintf("Undone %d action(s)", succeeded)
+		if failed > 0 {
+			msg += fmt.Sprintf(", %d failed", failed)
+		}
+		t.showMessage(msg)
 	})
 }
 

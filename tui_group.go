@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -27,8 +28,25 @@ func (t *TUI) buildGroupList() {
 	// Add each group to list view
 	idx := 0 // Init index
 	for groupName, members := range groups {
+		// Build effect details for each member (same style as host view)
+		effectStr := ""
+		for _, memberName := range members {
+			effects := effectTracker.Get(memberName)
+			for _, e := range effects {
+				switch e.Type {
+				case EffectBlackHole:
+					effectStr += fmt.Sprintf(" (BlackHole:%s→%s)", memberName, e.Target)
+				case EffectLatency:
+					effectStr += fmt.Sprintf(" (Latency:%s %s→%s)", e.Value, e.Target, memberName)
+				case EffectPacketLoss:
+					effectStr += fmt.Sprintf(" (PacketLoss:%s%% %s→%s)", e.Value, e.Target, memberName)
+				case EffectPortBlock:
+					effectStr += fmt.Sprintf(" (PortBlock:%s:%s→%s)", e.Target, e.Value, memberName)
+				}
+			}
+		}
 		// Build a label to display in group views
-		labels := fmt.Sprintf("%s (%d hosts)", groupName, len(members))
+		labels := fmt.Sprintf("%s (%d hosts)%s", groupName, len(members), effectStr)
 		var shortcut rune
 		// If there is more than 9 group, > 9th++, they will not able to receive shortcut. Haha
 		if idx < 9 {
@@ -173,6 +191,9 @@ func (t *TUI) showGroupInputForm(groupName string, members []string, actionType 
 // applyGroupAction applies action to all hosts in a group
 // Flow: loop hosts → skip disconnected → apply action → collect results → show summary popup.
 func (t *TUI) applyGroupAction(groupName string, members []string, actionType, target, value string) {
+	// Snapshot undo stack size before applying, so we can tag new entries with batch ID
+	stackBefore := undoStack.Len()
+
 	// Init var
 	success := 0
 	skipped := 0
@@ -232,6 +253,12 @@ func (t *TUI) applyGroupAction(groupName string, members []string, actionType, t
 		}
 	}
 
+	// Tag all new undo entries with same batch ID for batch undo!
+	if undoStack.Len() > stackBefore {
+		batchID := fmt.Sprintf("group-%s-%d", groupName, time.Now().UnixNano())
+		undoStack.TagBatch(stackBefore, batchID)
+	}
+
 	// Build summary!
 	// Count by target now! Example 3 ip apply in group that has 3 hosts --> 9!
 	msg := fmt.Sprintf("Group [%s] %s: %d/%d succeeded", groupName, actionType, success, total)
@@ -241,6 +268,11 @@ func (t *TUI) applyGroupAction(groupName string, members []string, actionType, t
 	if len(errors) > 0 {
 		msg += "\n\nFailed:\n" + strings.Join(errors, "\n")
 	}
+
+	// Refresh group view so active rules show immediately!
+	t.buildGroupList()
+	t.buildLayout()
+
 	t.showMessage(msg)
 }
 

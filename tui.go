@@ -189,11 +189,12 @@ func (t *TUI) setupHostListKeys() {
 	t.hostList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape || event.Rune() == 'q' {
 			allEffects := effectTracker.GetAll()
-			if len(allEffects) > 0 {
-				total := 0
-				for _, effects := range allEffects {
-					total += len(effects)
-				}
+			total := 0
+			for _, effects := range allEffects {
+				total += len(effects)
+			}
+			// Don't show if we have 0 rule active!
+			if total > 0 {
 				msg := fmt.Sprintf("%d rules still active on %d hosts.\nQuit anyway?", total, len(allEffects))
 				t.showConfirmDialog(msg, func() {
 					t.app.Stop()

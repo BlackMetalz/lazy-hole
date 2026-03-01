@@ -135,7 +135,12 @@ var rootCmd = &cobra.Command{
 		// Use latest statuses from TUI (may have been refreshed!)
 		currentStatuses := tui.GetStatuses()
 
-		if len(effectTracker.GetAll()) > 0 {
+		// Count actual effects (not just hosts in map)
+		totalEffects := 0
+		for _, effects := range effectTracker.GetAll() {
+			totalEffects += len(effects)
+		}
+		if totalEffects > 0 {
 			fmt.Println("\nCleaning up effects...")
 			restoreAll(currentStatuses)
 		}
@@ -165,8 +170,12 @@ func setupCleanUp(hostStatuses []HostStatus) {
 		<-c // Wait for Ctrl+C or kill signal
 		fmt.Println("\nReceived interrupt signal, cleaning up!")
 
-		// Check if there are any effects
-		if len(effectTracker.GetAll()) > 0 {
+		// Count actual effects (not just hosts in map)
+		totalEffects := 0
+		for _, effects := range effectTracker.GetAll() {
+			totalEffects += len(effects)
+		}
+		if totalEffects > 0 {
 			restoreAll(hostStatuses)
 		}
 

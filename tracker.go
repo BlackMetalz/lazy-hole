@@ -97,6 +97,7 @@ type UndoAction struct {
 	Hostname string
 	Effect   ActiveEffect // Type+Target+Value → enough to call removeSingleEffect
 	Client   *ssh.Client
+	BatchID  string // Group actions share same BatchID for batch undo
 }
 
 // Global undo stack
@@ -135,4 +136,51 @@ func (s *UndoStack) Peek() *UndoAction {
 		return nil
 	}
 	return &s.actions[len(s.actions)-1]
+}
+
+// Len returns current stack size
+func (s *UndoStack) Len() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.actions)
+}
+
+// TagBatch sets BatchID on all entries from fromIndex to end
+func (s *UndoStack) TagBatch(fromIndex int, batchID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := fromIndex; i < len(s.actions); i++ {
+		s.actions[i].BatchID = batchID
+	}
+}
+
+// PopBatch pops all actions with same BatchID as top entry.
+// If top has no BatchID, pops just 1 (normal undo behavior).
+func (s *UndoStack) PopBatch() []UndoAction {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.actions) == 0 {
+		return nil
+	}
+
+	last := s.actions[len(s.actions)-1]
+
+	// No batch ID → single undo
+	if last.BatchID == "" {
+		s.actions = s.actions[:len(s.actions)-1]
+		return []UndoAction{last}
+	}
+
+	// Collect all actions with same BatchID
+	var batch []UndoAction
+	var remaining []UndoAction
+	for _, a := range s.actions {
+		if a.BatchID == last.BatchID {
+			batch = append(batch, a)
+		} else {
+			remaining = append(remaining, a)
+		}
+	}
+	s.actions = remaining
+	return batch
 }
