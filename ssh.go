@@ -79,19 +79,17 @@ func connectSSH(host Host) (*ssh.Client, error) {
 
 }
 
-// Test all hosts connection in PARALLEL
+// Test all hosts connection in PARALLEL (preserves config order!)
 func testAllHosts(hosts []Host) []HostStatus {
-	// Yes, I understand this shit.
 	// Input is slice of Host, that loads all host from config
-	// Output is slide of Host Status, that contains connection result for each host
+	// Output is slice of Host Status, that contains connection result for each host
 
-	// create channel to collect results
-	// good shit, count total host to make buffered channel xD
-	results := make(chan HostStatus, len(hosts))
+	// create channel to collect results with index
+	results := make(chan indexedStatus, len(hosts))
 
-	// spawn goroutine for each host
-	for _, host := range hosts {
-		go func(h Host) {
+	// spawn goroutine for each host, pass index to preserve order
+	for i, host := range hosts {
+		go func(idx int, h Host) {
 			client, err := connectSSH(h)
 
 			status := HostStatus{
@@ -110,19 +108,16 @@ func testAllHosts(hosts []Host) []HostStatus {
 				status.SSH_SourceIP = sourceIP
 			}
 
-			// This shit is import
-			results <- status // send result into fucking channel
-		}(host) // Fucking second important.
-		// Pass host as argument to goroutine to avoid closure capture the last value of host?
+			// Send result with original index
+			results <- indexedStatus{index: idx, status: status}
+		}(i, host)
 	}
 
-	// Collect all results
-	var statuses []HostStatus
+	// Collect all results, write to correct position!
+	statuses := make([]HostStatus, len(hosts))
 	for i := 0; i < len(hosts); i++ {
-		status := <-results // Receive from channel
-		statuses = append(statuses, status)
-		// status.Client.Close() // Close connection after test done!
-		// Temp comment this out to avoid closing connection before using it
+		r := <-results
+		statuses[r.index] = r.status
 	}
 
 	return statuses

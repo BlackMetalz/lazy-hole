@@ -26,7 +26,6 @@ hosts:
     ip: 10.0.0.3
     ssh_user: kienlt
     group: k8s
-    group: mysql-db
   - name: elasticsearch-1
     ip: 10.0.0.201
     ssh_user: kienlt

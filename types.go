@@ -32,3 +32,10 @@ type CommandResult struct {
 	Stderr   string
 	ExitCode int // Exit code of remote command
 }
+
+// This is used for testAllHosts function
+// indexedStatus carries the original index so we can preserve config order
+type indexedStatus struct {
+	index  int
+	status HostStatus
+}
