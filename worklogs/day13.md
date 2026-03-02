@@ -9,3 +9,5 @@ More issue appear while trying to implement this shit
 - Not really, that is how it works, in group we block a group, that group have 3 fucking hosts, need to undo 3 times? pretty bad for UX, need to ~~fix~~ promt xD
 
 - Third, when I exit TUI, it still show 0 active rule on hosts. --> need to correction. Count total effects instead of check `effectTracker.GetAll()` > 0
+
+### Restore single (remove specific rule on single host) doesn't write log!

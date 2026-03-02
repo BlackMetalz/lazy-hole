@@ -504,6 +504,7 @@ func (t *TUI) showRestoreMenu(status HostStatus) {
 			if err != nil {
 				t.showMessage("Error: " + err.Error())
 			} else {
+				actionLogger.Log(status.Host.Name, e.Type+" DEL", "target="+e.Target, "SUCCESS")
 				t.showMessage("Removed: " + e.Type + " " + e.Target)
 			}
 		})
