@@ -89,11 +89,11 @@ func testAllHosts(hosts []Host) []HostStatus {
 
 	// spawn goroutine for each host, pass index to preserve order
 	for i, host := range hosts {
-		go func(idx int, h Host) {
-			client, err := connectSSH(h)
+		go func() {
+			client, err := connectSSH(host)
 
 			status := HostStatus{
-				Host:      h,
+				Host:      host,
 				Connected: err == nil,
 				Error:     err,
 				Client:    client,
@@ -109,8 +109,8 @@ func testAllHosts(hosts []Host) []HostStatus {
 			}
 
 			// Send result with original index
-			results <- indexedStatus{index: idx, status: status}
-		}(i, host)
+			results <- indexedStatus{index: i, status: status}
+		}()
 	}
 
 	// Collect all results, write to correct position!

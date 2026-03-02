@@ -194,6 +194,8 @@ for _, host := range hosts {
 }
 ```
 
+Update Mar 02,2026: Not really needed since it was fixed in Go 1.22++, but good to know!
+
 progress why: when run loop, it will create new variable h for each iteration, so each goroutine will have its own copy of host, and won't be affected by other goroutines
 
 ```
