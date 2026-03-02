@@ -16,15 +16,15 @@ Run on jump host → SSH to target hosts → Execute network commands remotely
 
 ### Add latency on single host and Undo (remove previous rule applied)
 For this example: add 200ms latency to interface `eth0`
-![latency-single-host](./images/gif/add_latency_host.gif)
+![latency-single-host](./images/gif/add_latency_host_and_undo_resized_60.gif)
 
 ### Blackhole whole group defined in config and cleanup on exit by default
 
-![blackhole-group](./images/gif/blackhole_group_and_cleanup_on_exit.gif)
+![blackhole-group](./images/gif/blackhole_group_and_cleanup_on_exit_60.gif)
 
 ### View history applied for single host and remove specific rule
 
-![history-single-host](./images/gif/restore_single_host_and_history.gif)
+![history-single-host](./images/gif/restore_single_host_and_history_60.gif)
 
 ## Features
 - **Blackhole routing** — Drop all traffic to specific IP/CIDR (ip route blackhole). Simulates DNS/routing failure, network down!
