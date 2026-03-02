@@ -156,7 +156,7 @@ var rootCmd = &cobra.Command{
 
 // Add flag for config path
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "sample/hosts.yaml", "Path to config file")
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "hosts.yaml", "Path to config file")
 }
 
 // setupCleanUp will setup clean up function for root command
