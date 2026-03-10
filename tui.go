@@ -37,15 +37,19 @@ type TUI struct {
 
 	// view mode, allow switch between groups/hosts view
 	viewMode string
+
+	// Result of the GitHub version check (set async, read in buildLayout)
+	updateInfo UpdateInfo
 }
 
 // NewTUI creates a new TUI instance with data from SSH test connection
 func NewTUI(statuses []HostStatus) *TUI {
 	// return TUI struct
 	return &TUI{
-		app:      tview.NewApplication(), // new app container
-		statuses: statuses,               // save data for later display
-		viewMode: "hosts",                // Default view is host view!
+		app:        tview.NewApplication(), // new app container
+		statuses:   statuses,               // save data for later display
+		viewMode:   "hosts",                // Default view is host view!
+		updateInfo: UpdateInfo{State: updateStateChecking},
 	}
 }
 
@@ -91,6 +95,17 @@ func (t *TUI) Run() error {
 
 	// Build layout = hostList + footer
 	t.buildLayout()
+
+	// Fire version check once; redraw the header when result arrives.
+	go func() {
+		resultCh := CheckUpdateAsync(version)
+		info := <-resultCh
+		t.app.QueueUpdateDraw(func() {
+			t.updateInfo = info
+			t.buildLayout()
+			t.app.SetRoot(t.layout, true)
+		})
+	}()
 
 	// SetRoot = which widget will display
 	// EnableMouse = allow mouse interaction
@@ -268,8 +283,9 @@ func (t *TUI) setupHostListKeys() {
 func (t *TUI) buildLayout() {
 	// LEFT = version info (dynamic from root_cmd.go)
 	leftText := "[yellow]lazy-hole[-] " + version
+	leftText += "\n" + UpdateBannerText(t.updateInfo)
 	if t.filterText != "" {
-		leftText += "\n[red]filtered keyword: " + t.filterText + "[-]"
+		leftText += "\n[red]filter: " + t.filterText + "[-]"
 	}
 	headerLeft := tview.NewTextView().
 		SetDynamicColors(true).
@@ -316,6 +332,6 @@ func (t *TUI) buildLayout() {
 	}
 
 	t.layout = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(header, 5, 0, false).   // Header 5 lines (logo height). Each header will have max 5 commands!
+		AddItem(header, 6, 0, false).   // Header 6 lines: version+update(2) + shortcuts(3) + padding(1)
 		AddItem(activeList, 0, 1, true) // List with focus
 }
