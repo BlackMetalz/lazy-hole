@@ -9,28 +9,36 @@ import (
 	"github.com/rivo/tview"
 )
 
+// groupEntry holds ordered group data for stable index mapping
+type groupEntry struct {
+	name    string
+	members []string
+}
+
 // buildGroupList, create list from group
 func (t *TUI) buildGroupList() {
 	t.groupList = tview.NewList()
 	t.groupList.SetTitle(" Groups ").SetBorder(true)
 
-	// Collect groups from statuses
-	// map[groupName] => []hostName
-	groups := make(map[string][]string)
+	// Collect groups from statuses into a map first
+	groupMap := make(map[string][]string)
 	for _, s := range t.statuses {
-		// Check group field is not empty
 		if s.Host.Group != "" {
-			// append host name into group
-			groups[s.Host.Group] = append(groups[s.Host.Group], s.Host.Name)
+			groupMap[s.Host.Group] = append(groupMap[s.Host.Group], s.Host.Name)
 		}
 	}
 
+	// Convert to ordered slice so index → group is stable
+	var groupEntries []groupEntry
+	for gName, gMembers := range groupMap {
+		groupEntries = append(groupEntries, groupEntry{name: gName, members: gMembers})
+	}
+
 	// Add each group to list view
-	idx := 0 // Init index
-	for groupName, members := range groups {
+	for idx, g := range groupEntries {
 		// Build effect details for each member (same style as host view)
 		effectStr := ""
-		for _, memberName := range members {
+		for _, memberName := range g.members {
 			effects := effectTracker.Get(memberName)
 			for _, e := range effects {
 				switch e.Type {
@@ -46,7 +54,7 @@ func (t *TUI) buildGroupList() {
 			}
 		}
 		// Build a label to display in group views
-		labels := fmt.Sprintf("%s (%d hosts)%s", groupName, len(members), effectStr)
+		labels := fmt.Sprintf("%s (%d hosts)%s", g.name, len(g.members), effectStr)
 		var shortcut rune
 		// If there is more than 9 group, > 9th++, they will not able to receive shortcut. Haha
 		if idx < 9 {
@@ -55,11 +63,12 @@ func (t *TUI) buildGroupList() {
 			shortcut = 0
 		}
 
-		t.groupList.AddItem(labels, strings.Join(members, ", "), shortcut, func() {
-			t.showGroupActionMenu(groupName, members)
+		// Capture loop vars for closures
+		gName := g.name
+		gMembers := g.members
+		t.groupList.AddItem(labels, strings.Join(gMembers, ", "), shortcut, func() {
+			t.showGroupActionMenu(gName, gMembers)
 		})
-
-		idx++
 	}
 
 	// ESC = back to hosts. Specific handler
@@ -88,6 +97,14 @@ func (t *TUI) buildGroupList() {
 		if event.Rune() == '/' {
 			t.showFilterDialog()
 		}
+		// k = Kill all rules for the highlighted group
+		if event.Rune() == 'k' {
+			idx := t.groupList.GetCurrentItem()
+			if idx >= 0 && idx < len(groupEntries) {
+				g := groupEntries[idx]
+				t.killGroupRules(g.name, g.members)
+			}
+		}
 		return event
 	})
 }
@@ -99,6 +116,62 @@ func (t *TUI) switchToGroupView() {
 	// Rebuild layout with group list
 	t.buildLayout()
 	t.app.SetRoot(t.layout, true)
+}
+
+// killGroupRules removes all active rules for every host in a group.
+// Shows a confirm dialog first, then restores each connected member.
+func (t *TUI) killGroupRules(groupName string, members []string) {
+	// Count total active effects across the group
+	totalEffects := 0
+	for _, memberName := range members {
+		totalEffects += len(effectTracker.Get(memberName))
+	}
+
+	if totalEffects == 0 {
+		t.showMessage(fmt.Sprintf("Group [%s]: no active rules to remove!", groupName))
+		return
+	}
+
+	msg := fmt.Sprintf("Remove ALL %d rules from group [%s] (%d hosts)?", totalEffects, groupName, len(members))
+	t.showConfirmDialog(msg, func() {
+		success := 0
+		skipped := 0
+		var errors []string
+
+		for _, memberName := range members {
+			// Find client for this member
+			var status *HostStatus
+			for i := range t.statuses {
+				if t.statuses[i].Host.Name == memberName {
+					status = &t.statuses[i]
+					break
+				}
+			}
+			if status == nil || !status.Connected || !status.Sudo {
+				skipped++
+				continue
+			}
+			err := restoreHost(status.Client, memberName)
+			if err != nil {
+				errors = append(errors, memberName+": "+err.Error())
+			} else {
+				success++
+			}
+		}
+
+		result := fmt.Sprintf("Group [%s] Kill Rules: %d/%d hosts restored", groupName, success, len(members))
+		if skipped > 0 {
+			result += fmt.Sprintf("\n%d skipped (disconnected/no sudo)", skipped)
+		}
+		if len(errors) > 0 {
+			result += "\n\nErrors:\n" + strings.Join(errors, "\n")
+		}
+
+		// Rebuild group list so effects disappear immediately
+		t.buildGroupList()
+		t.buildLayout()
+		t.showMessage(result)
+	})
 }
 
 // func showGroupActionMenu, shơ action menu fỏ group

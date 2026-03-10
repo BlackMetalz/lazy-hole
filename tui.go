@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	// tcell is a lib low-level that handle keyboard/mouse events
 	// tview ise tcell
@@ -225,6 +226,39 @@ func (t *TUI) setupHostListKeys() {
 		if event.Rune() == 'g' {
 			t.switchToGroupView()
 		}
+		// k = Kill all rules for the highlighted host
+		if event.Rune() == 'k' {
+			idx := t.hostList.GetCurrentItem()
+			// Build displayable statuses (same filter logic as refreshHostList)
+			var displayedStatuses []HostStatus
+			for _, s := range t.statuses {
+				if t.filterText != "" && !strings.Contains(
+					strings.ToLower(s.Host.Name),
+					strings.ToLower(t.filterText),
+				) {
+					continue
+				}
+				displayedStatuses = append(displayedStatuses, s)
+			}
+			if idx >= 0 && idx < len(displayedStatuses) {
+				status := displayedStatuses[idx]
+				if !status.Connected || !status.Sudo {
+					t.showMessage(status.Host.Name + ": not connected or no sudo")
+				} else if len(effectTracker.Get(status.Host.Name)) == 0 {
+					t.showMessage(status.Host.Name + ": no active rules")
+				} else {
+					msg := fmt.Sprintf("Remove ALL rules from [%s]?", status.Host.Name)
+					t.showConfirmDialog(msg, func() {
+						err := restoreHost(status.Client, status.Host.Name)
+						if err != nil {
+							t.showMessage("Error: " + err.Error())
+						} else {
+							t.showMessage("Restored " + status.Host.Name)
+						}
+					})
+				}
+			}
+		}
 
 		return event
 	})
@@ -241,41 +275,15 @@ func (t *TUI) buildLayout() {
 		SetDynamicColors(true).
 		SetText(leftText)
 
-	// MIDDLE = commands in 2 columns using Grid
-	// (-1,-1) = 2 equal columns!
-	headerMid := tview.NewGrid().SetColumns(-1, -1)
-
-	// Need call separated because it will return `*Box`, not `*Grid` so we can not add 2 columns using
-	// headerMid.AddItem below
-	// headerMid.SetBorder(true)
-
-	// We will have max 5 command for each columns!
-
-	leftMidCol := tview.NewTextView().
+	// MIDDLE = all commands inline, K9s-style, grouped by category
+	headerMid := tview.NewTextView().
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignLeft).
 		SetText(
-			"[aqua](r)[-]" + " Refresh\n" +
-				"[aqua](p)[-]" + " Protected\n" +
-				"[aqua](?)[-]" + " Help\n" +
-				"[aqua](/)[-]" + " Filter\n" +
-				"[aqua](h)[-]" + " History applied\n",
+			"[aqua](r)[-] Refresh    [aqua](p)[-] Protected  [aqua](?)[-] Help      [aqua](/)[-] Filter\n" +
+				"[aqua](u)[-] Undo rule  [aqua](k)[-] Kill rules [aqua](h)[-] History\n" +
+				"[aqua](g)[-] Group view [aqua](l)[-] Host view  [aqua](ESC)[-] Back    [aqua](q)[-] Quit\n",
 		)
-
-	rightMidCol := tview.NewTextView().
-		SetDynamicColors(true).
-		SetTextAlign(tview.AlignLeft).
-		SetText(
-			"[aqua](ESC)[-]" + " Back\n" +
-				"[aqua](q)[-]" + " Quit\n" +
-				"[aqua](u)[-]" + " Undo last rule\n" +
-				"[aqua](g)[-]" + " Switch group view\n" +
-				"[aqua](l)[-]" + " Switch host view\n",
-		)
-
-	headerMid.
-		AddItem(leftMidCol, 0, 0, 1, 1, 0, 0, false).
-		AddItem(rightMidCol, 0, 1, 1, 1, 0, 0, false)
 
 	// headerMid := tview.NewTextView().
 	// 	SetDynamicColors(true).
