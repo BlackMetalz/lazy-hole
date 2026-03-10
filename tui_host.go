@@ -67,17 +67,6 @@ func (t *TUI) showActionMenu(status HostStatus) {
 		t.showRestoreMenu(status)
 	})
 
-	// Restore all rules
-	actionList.AddItem("Restore All", "Remove all rules", 'r', func() {
-		// call restoreHost directly
-		err := restoreHost(status.Client, status.Host.Name)
-		if err != nil {
-			t.showMessage("Error: " + err.Error())
-		} else {
-			t.showMessage("Restored " + status.Host.Name)
-		}
-	})
-
 	actionList.AddItem("Back", "Return to host list", 0, func() {
 		t.refreshHostList() // refresh data first
 		t.app.SetRoot(t.layout, true)
